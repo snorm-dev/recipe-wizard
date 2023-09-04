@@ -26,7 +26,7 @@ type Recipe struct {
 	Url         sql.NullString
 	PrepTime    sql.NullTime
 	CookTime    sql.NullTime
-	CoolTime    sql.NullTime
+	TotalTime   sql.NullTime
 }
 
 type RecipeIngredient struct {

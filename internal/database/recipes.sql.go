@@ -12,7 +12,7 @@ import (
 )
 
 const createRecipe = `-- name: CreateRecipe :exec
-INSERT INTO recipes(id, created_at, updated_at, name, description, url, prep_time, cook_time, cool_time)
+INSERT INTO recipes(id, created_at, updated_at, name, description, url, prep_time, cook_time, total_time)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
@@ -25,7 +25,7 @@ type CreateRecipeParams struct {
 	Url         sql.NullString
 	PrepTime    sql.NullTime
 	CookTime    sql.NullTime
-	CoolTime    sql.NullTime
+	TotalTime   sql.NullTime
 }
 
 func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) error {
@@ -38,13 +38,13 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) erro
 		arg.Url,
 		arg.PrepTime,
 		arg.CookTime,
-		arg.CoolTime,
+		arg.TotalTime,
 	)
 	return err
 }
 
 const getRecipe = `-- name: GetRecipe :one
-SELECT id, created_at, updated_at, name, description, url, prep_time, cook_time, cool_time FROM recipes
+SELECT id, created_at, updated_at, name, description, url, prep_time, cook_time, total_time FROM recipes
 WHERE id = ?
 `
 
@@ -60,13 +60,13 @@ func (q *Queries) GetRecipe(ctx context.Context, id string) (Recipe, error) {
 		&i.Url,
 		&i.PrepTime,
 		&i.CookTime,
-		&i.CoolTime,
+		&i.TotalTime,
 	)
 	return i, err
 }
 
 const getRecipes = `-- name: GetRecipes :many
-SELECT id, created_at, updated_at, name, description, url, prep_time, cook_time, cool_time FROM recipes
+SELECT id, created_at, updated_at, name, description, url, prep_time, cook_time, total_time FROM recipes
 `
 
 func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
@@ -87,7 +87,7 @@ func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
 			&i.Url,
 			&i.PrepTime,
 			&i.CookTime,
-			&i.CoolTime,
+			&i.TotalTime,
 		); err != nil {
 			return nil, err
 		}
