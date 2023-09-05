@@ -70,7 +70,10 @@ func main() {
 
 func (c *config) handlePing() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("pong!"))
+		_, err := w.Write([]byte("pong!"))
+		if err != nil {
+			log.Println("Could not respond to ping request: ", err)
+		}
 	}
 }
 
@@ -89,10 +92,14 @@ func respondWithJSON(w http.ResponseWriter, code int, body interface{}) error {
 	return err
 }
 
-func respondWithError(w http.ResponseWriter, code int, message string) error {
+func respondWithError(w http.ResponseWriter, code int, message string) {
 	type response struct {
 		Error string `json:"error"`
 	}
 
-	return respondWithJSON(w, code, response{Error: message})
+	err := respondWithJSON(w, code, response{Error: message})
+
+	if err != nil {
+		log.Println("Could not respond with error: ", err)
+	}
 }
