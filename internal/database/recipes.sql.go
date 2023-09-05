@@ -12,12 +12,11 @@ import (
 )
 
 const createRecipe = `-- name: CreateRecipe :exec
-INSERT INTO recipes(id, created_at, updated_at, name, description, url, prep_time, cook_time, total_time)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO recipes(created_at, updated_at, name, description, url, prep_time, cook_time, total_time)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateRecipeParams struct {
-	ID          string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Name        string
@@ -30,7 +29,6 @@ type CreateRecipeParams struct {
 
 func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) error {
 	_, err := q.db.ExecContext(ctx, createRecipe,
-		arg.ID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.Name,
@@ -48,7 +46,7 @@ SELECT id, created_at, updated_at, name, description, url, prep_time, cook_time,
 WHERE id = ?
 `
 
-func (q *Queries) GetRecipe(ctx context.Context, id string) (Recipe, error) {
+func (q *Queries) GetRecipe(ctx context.Context, id int64) (Recipe, error) {
 	row := q.db.QueryRowContext(ctx, getRecipe, id)
 	var i Recipe
 	err := row.Scan(

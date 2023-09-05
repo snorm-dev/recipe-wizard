@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/kkyr/go-recipe/pkg/recipe"
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
@@ -18,7 +17,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 		Url string `json:"url"`
 	}
 	type response struct {
-		ID          uuid.UUID `json:"id"`
+		ID          int64     `json:"id"`
 		CreatedAt   time.Time `json:"created_at"`
 		UpdatedAt   time.Time `json:"updated_at"`
 		Name        string    `json:"name"`
@@ -74,7 +73,6 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			Valid:  ok,
 		}
 
-		id := uuid.New().String()
 		now := time.Now()
 		url := sql.NullString{
 			String: reqBody.Url,
@@ -82,7 +80,6 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 		}
 
 		err = c.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
-			ID:          id,
 			CreatedAt:   now,
 			UpdatedAt:   now,
 			Url:         url,
@@ -98,6 +95,12 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
+		id, err := c.DB.GetLastInsertID(r.Context())
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not retrieve id: %v", err))
+		}
+
 		recipe, err := c.DB.GetRecipe(r.Context(), id)
 
 		if err != nil {
@@ -105,15 +108,13 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
-		uuid, err := uuid.Parse(recipe.ID)
-
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not parse uuid: %v", err))
 			return
 		}
 
 		resBody := response{
-			ID:        uuid,
+			ID:        id,
 			CreatedAt: recipe.CreatedAt,
 			UpdatedAt: recipe.UpdatedAt,
 			Name:      name,

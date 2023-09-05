@@ -10,7 +10,7 @@ import (
 )
 
 type Ingredient struct {
-	ID          string
+	ID          int64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Name        string
@@ -18,7 +18,7 @@ type Ingredient struct {
 }
 
 type Recipe struct {
-	ID          string
+	ID          int64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Name        string
@@ -30,7 +30,7 @@ type Recipe struct {
 }
 
 type RecipeIngredient struct {
-	ID           string
+	ID           int64
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	IngredientID string

@@ -17,7 +17,7 @@ VALUES (?, ?, ?, ?, ?)
 `
 
 type CreateIngredientParams struct {
-	ID          string
+	ID          int64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Name        string
@@ -40,7 +40,7 @@ SELECT id, created_at, updated_at, name, description FROM ingredients
 WHERE id = ?
 `
 
-func (q *Queries) GetIngredient(ctx context.Context, id string) (Ingredient, error) {
+func (q *Queries) GetIngredient(ctx context.Context, id int64) (Ingredient, error) {
 	row := q.db.QueryRowContext(ctx, getIngredient, id)
 	var i Ingredient
 	err := row.Scan(
