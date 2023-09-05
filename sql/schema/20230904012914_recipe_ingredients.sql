@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE recipe_ingredients (
-    id VARCHAR(36) PRIMARY KEY,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     ingredient_id VARCHAR(36) NOT NULL,
