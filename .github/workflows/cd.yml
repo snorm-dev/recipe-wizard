@@ -41,6 +41,6 @@ jobs:
         run: scripts/migrateup.sh
 
       - name: Deploy to Cloud Run
-        run: gcloud run deploy notely --image us-central1-docker.pkg.dev/notely-397523/notely-ar-repo/notely:latest --region us-central1 --allow-unauthenticated --project notely-397523 --max-instances=4
+        run: gcloud run deploy recipe-wizard --image us-central1-docker.pkg.dev/recipe-wizard-398420/recipe-wizard-ar/recipe-wizard:latest --region us-central1 --allow-unauthenticated --project recipe-wizard-398420 --max-instances=4
 
 
