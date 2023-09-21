@@ -1,2 +1,2 @@
 # recipe-wizard
-Compile your shopping list from the recipes you want to make!
+Compile your grocery list from the recipes you want to make!
