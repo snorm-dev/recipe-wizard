@@ -52,6 +52,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 		s, err := recipe.ScrapeURL(reqBody.Url)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Could not parse recipe from url: %v", err))
+			return
 		}
 
 		name, ok := s.Name()
