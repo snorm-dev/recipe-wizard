@@ -59,7 +59,7 @@ func main() {
 	v1.Post("/recipes", c.handlePostRecipe())
 
 	server := &http.Server{
-		Addr:              "localhost:" + port,
+		Addr:              ":" + port,
 		Handler:           r,
 		ReadHeaderTimeout: 2 * time.Second,
 	}
