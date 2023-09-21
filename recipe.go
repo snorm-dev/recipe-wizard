@@ -158,7 +158,8 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 				Name:      dbIngredient.Name,
 			}
 			if dbIngredient.Description.Valid {
-				ingredient.Description = &dbIngredient.Description.String
+				desc := dbIngredient.Description.String
+				ingredient.Description = &desc
 			}
 
 			resBody.Ingredients[i] = ingredient
