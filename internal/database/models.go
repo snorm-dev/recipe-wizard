@@ -15,6 +15,7 @@ type Ingredient struct {
 	UpdatedAt   time.Time
 	Name        string
 	Description sql.NullString
+	RecipeID    int64
 }
 
 type Recipe struct {
@@ -27,14 +28,4 @@ type Recipe struct {
 	PrepTime    sql.NullString
 	CookTime    sql.NullString
 	TotalTime   sql.NullString
-}
-
-type RecipeIngredient struct {
-	ID           int64
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	IngredientID string
-	RecipeID     string
-	Quantity     int32
-	Units        string
 }

@@ -5,7 +5,8 @@ CREATE TABLE ingredients (
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     name TEXT NOT NULL,
-    description TEXT
+    description TEXT,
+    recipe_id BIGINT NOT NULL
 );
 -- +goose StatementEnd
 
