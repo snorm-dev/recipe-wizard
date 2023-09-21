@@ -29,8 +29,7 @@ func main() {
 	port := os.Getenv("PORT")
 
 	if port == "" {
-		log.Println("Could not load custom port. Using default port 8080")
-		port = "8080"
+		log.Fatal("Could not load custom port.")
 	}
 
 	dbUrl := os.Getenv("DATABASE_URL")
@@ -59,7 +58,7 @@ func main() {
 	v1.Post("/recipes", c.handlePostRecipe())
 
 	server := &http.Server{
-		Addr:              ":" + port,
+		Addr:              "0.0.0.0:" + port,
 		Handler:           r,
 		ReadHeaderTimeout: 2 * time.Second,
 	}
