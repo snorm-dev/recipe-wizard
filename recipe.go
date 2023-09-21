@@ -16,16 +16,26 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 	type request struct {
 		Url string `json:"url"`
 	}
-	type response struct {
+
+	type ingredient struct {
 		ID          int64     `json:"id"`
 		CreatedAt   time.Time `json:"created_at"`
 		UpdatedAt   time.Time `json:"updated_at"`
 		Name        string    `json:"name"`
-		Description *string   `json:"description,omitempty"`
-		Url         *string   `json:"url,omitempty"`
-		PrepTime    *string   `json:"prep_time,omitempty"`
-		CookTime    *string   `json:"cook_time,omitempty"`
-		TotalTime   *string   `json:"total_time,omitempty"`
+		Description *string   `json:"description"`
+	}
+
+	type response struct {
+		ID          int64        `json:"id"`
+		CreatedAt   time.Time    `json:"created_at"`
+		UpdatedAt   time.Time    `json:"updated_at"`
+		Name        string       `json:"name"`
+		Description *string      `json:"description,omitempty"`
+		Url         *string      `json:"url,omitempty"`
+		PrepTime    *string      `json:"prep_time,omitempty"`
+		CookTime    *string      `json:"cook_time,omitempty"`
+		TotalTime   *string      `json:"total_time,omitempty"`
+		Ingredients []ingredient `json:"ingredients"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -108,18 +118,52 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
+		if ingredients, ok := s.Ingredients(); ok {
+			for _, ingredient := range ingredients {
+				now = time.Now()
+				err = c.DB.CreateIngredient(r.Context(), database.CreateIngredientParams{
+					CreatedAt:   now,
+					UpdatedAt:   now,
+					Name:        ingredient,
+					RecipeID:    id,
+					Description: sql.NullString{Valid: false},
+				})
+
+				if err != nil {
+					continue
+				}
+			}
+		}
+
+		dbIngredients, err := c.DB.GetIngredientsForRecipe(r.Context(), id)
+
 		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not parse uuid: %v", err))
+			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
 		resBody := response{
-			ID:        id,
-			CreatedAt: recipe.CreatedAt,
-			UpdatedAt: recipe.UpdatedAt,
-			Name:      name,
+			ID:          id,
+			CreatedAt:   recipe.CreatedAt,
+			UpdatedAt:   recipe.UpdatedAt,
+			Name:        name,
+			Ingredients: make([]ingredient, len(dbIngredients)),
 		}
 
+		for i, dbIngredient := range dbIngredients {
+			ingredient := ingredient{
+				ID:        dbIngredient.ID,
+				CreatedAt: dbIngredient.CreatedAt,
+				UpdatedAt: dbIngredient.UpdatedAt,
+				Name:      dbIngredient.Name,
+			}
+			if dbIngredient.Description.Valid {
+				desc := dbIngredient.Description.String
+				ingredient.Description = &desc
+			}
+
+			resBody.Ingredients[i] = ingredient
+		}
 		if recipe.Description.Valid {
 			resBody.Description = &recipe.Description.String
 		}

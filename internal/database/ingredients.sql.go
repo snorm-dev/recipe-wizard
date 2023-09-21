@@ -12,31 +12,31 @@ import (
 )
 
 const createIngredient = `-- name: CreateIngredient :exec
-INSERT INTO ingredients(id, created_at, updated_at, name, description)
+INSERT INTO ingredients(created_at, updated_at, name, description, recipe_id)
 VALUES (?, ?, ?, ?, ?)
 `
 
 type CreateIngredientParams struct {
-	ID          int64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Name        string
 	Description sql.NullString
+	RecipeID    int64
 }
 
 func (q *Queries) CreateIngredient(ctx context.Context, arg CreateIngredientParams) error {
 	_, err := q.db.ExecContext(ctx, createIngredient,
-		arg.ID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.Name,
 		arg.Description,
+		arg.RecipeID,
 	)
 	return err
 }
 
 const getIngredient = `-- name: GetIngredient :one
-SELECT id, created_at, updated_at, name, description FROM ingredients
+SELECT id, created_at, updated_at, name, description, recipe_id FROM ingredients
 WHERE id = ?
 `
 
@@ -49,6 +49,43 @@ func (q *Queries) GetIngredient(ctx context.Context, id int64) (Ingredient, erro
 		&i.UpdatedAt,
 		&i.Name,
 		&i.Description,
+		&i.RecipeID,
 	)
 	return i, err
+}
+
+const getIngredientsForRecipe = `-- name: GetIngredientsForRecipe :many
+SELECT id, created_at, updated_at, name, description, recipe_id FROM ingredients
+WHERE recipe_id = ?
+ORDER BY id
+`
+
+func (q *Queries) GetIngredientsForRecipe(ctx context.Context, recipeID int64) ([]Ingredient, error) {
+	rows, err := q.db.QueryContext(ctx, getIngredientsForRecipe, recipeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Ingredient
+	for rows.Next() {
+		var i Ingredient
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.Description,
+			&i.RecipeID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
