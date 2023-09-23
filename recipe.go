@@ -233,7 +233,7 @@ func (c *config) handleGetRecipes() http.HandlerFunc {
 			return
 		}
 
-		resBody := make([]recipe, len(recipes))
+		resBody := make(response, len(recipes))
 
 		for i, dbRecipe := range recipes {
 			r := recipe{
@@ -250,6 +250,10 @@ func (c *config) handleGetRecipes() http.HandlerFunc {
 			resBody[i] = r
 		}
 
-		respondWithJSON(w, http.StatusOK, resBody)
+		err = respondWithJSON(w, http.StatusOK, resBody)
+
+		if err != nil {
+			log.Println(err.Error())
+		}
 	}
 }
