@@ -63,6 +63,8 @@ func main() {
 
 	v1.Get("/ping", c.handlePing())
 	v1.Post("/recipes", c.handlePostRecipe())
+	v1.Get("/recipes", c.handleGetRecipes())
+	v1.Get("/recipes/{recipe_id}", c.handleGetRecipe())
 
 	server := &http.Server{
 		Addr:              "0.0.0.0:" + port,
@@ -108,4 +110,15 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 	if err != nil {
 		log.Println("Could not respond with error: ", err)
 	}
+}
+
+func stringPointerFromSqlNullString(s sql.NullString) *string {
+	if !s.Valid {
+		return nil
+	}
+	return &s.String
+}
+
+func sqlNullStringFromString(s string, ok bool) sql.NullString {
+	return sql.NullString{Valid: ok, String: s}
 }
