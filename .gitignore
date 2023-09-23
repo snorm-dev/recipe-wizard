@@ -22,3 +22,5 @@ go.work
 
 # Environment variables adn secrets
 .env
+
+recipe-wizard
