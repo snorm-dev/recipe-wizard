@@ -210,3 +210,46 @@ func (c *config) handleGetRecipe() http.HandlerFunc {
 		}
 	}
 }
+
+func (c *config) handleGetRecipes() http.HandlerFunc {
+	type recipe struct {
+		ID          int64     `json:"id"`
+		CreatedAt   time.Time `json:"created_at"`
+		UpdatedAt   time.Time `json:"updated_at"`
+		Name        string    `json:"name"`
+		Description *string   `json:"description"`
+		Url         *string   `json:"url"`
+		PrepTime    *string   `json:"prep_time"`
+		CookTime    *string   `json:"cook_time"`
+		TotalTime   *string   `json:"total_time"`
+	}
+	type response []recipe
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		recipes, err := c.DB.GetRecipes(r.Context())
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		resBody := make([]recipe, len(recipes))
+
+		for i, dbRecipe := range recipes {
+			r := recipe{
+				ID:          dbRecipe.ID,
+				CreatedAt:   dbRecipe.CreatedAt,
+				UpdatedAt:   dbRecipe.UpdatedAt,
+				Name:        dbRecipe.Name,
+				Description: stringPointerFromSqlNullString(dbRecipe.Description),
+				Url:         stringPointerFromSqlNullString(dbRecipe.Url),
+				PrepTime:    stringPointerFromSqlNullString(dbRecipe.PrepTime),
+				CookTime:    stringPointerFromSqlNullString(dbRecipe.CookTime),
+				TotalTime:   stringPointerFromSqlNullString(dbRecipe.TotalTime),
+			}
+			resBody[i] = r
+		}
+
+		respondWithJSON(w, http.StatusOK, resBody)
+	}
+}

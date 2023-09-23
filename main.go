@@ -63,6 +63,7 @@ func main() {
 
 	v1.Get("/ping", c.handlePing())
 	v1.Post("/recipes", c.handlePostRecipe())
+	v1.Get("/recipes", c.handleGetRecipes())
 	v1.Get("/recipes/{recipe_id}", c.handleGetRecipe())
 
 	server := &http.Server{
