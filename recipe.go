@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/kkyr/go-recipe/pkg/recipe"
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
@@ -60,29 +62,14 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			name = reqBody.Url
 		}
 
-		str, ok := s.Description()
-		description := sql.NullString{
-			String: str,
-			Valid:  ok,
+		timeDurationToString := func(t time.Duration, ok bool) (string, bool) {
+			return t.String(), ok
 		}
 
-		t, ok := s.PrepTime()
-		prepTime := sql.NullString{
-			String: t.String(),
-			Valid:  ok,
-		}
-
-		t, ok = s.CookTime()
-		cookTime := sql.NullString{
-			String: t.String(),
-			Valid:  ok,
-		}
-
-		t, ok = s.TotalTime()
-		totalTime := sql.NullString{
-			String: t.String(),
-			Valid:  ok,
-		}
+		description := sqlNullStringFromString(s.Description())
+		prepTime := sqlNullStringFromString(timeDurationToString(s.PrepTime()))
+		cookTime := sqlNullStringFromString(timeDurationToString(s.CookTime()))
+		totalTime := sqlNullStringFromString(timeDurationToString(s.TotalTime()))
 
 		now := time.Now()
 		url := sql.NullString{
@@ -148,6 +135,11 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			CreatedAt:   recipe.CreatedAt,
 			UpdatedAt:   recipe.UpdatedAt,
 			Name:        name,
+			Description: stringPointerFromSqlNullString(recipe.Description),
+			Url:         stringPointerFromSqlNullString(recipe.Url),
+			PrepTime:    stringPointerFromSqlNullString(recipe.PrepTime),
+			CookTime:    stringPointerFromSqlNullString(recipe.CookTime),
+			TotalTime:   stringPointerFromSqlNullString(recipe.TotalTime),
 			Ingredients: make([]ingredient, len(dbIngredients)),
 		}
 
@@ -158,37 +150,63 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 				UpdatedAt: dbIngredient.UpdatedAt,
 				Name:      dbIngredient.Name,
 			}
-			if dbIngredient.Description.Valid {
-				desc := dbIngredient.Description.String
-				ingredient.Description = &desc
-			}
+			ingredient.Description = stringPointerFromSqlNullString(dbIngredient.Description)
 
 			resBody.Ingredients[i] = ingredient
-		}
-		if recipe.Description.Valid {
-			resBody.Description = &recipe.Description.String
-		}
-
-		if recipe.Url.Valid {
-			resBody.Url = &recipe.Url.String
-		}
-
-		if recipe.PrepTime.Valid {
-			resBody.PrepTime = &recipe.PrepTime.String
-		}
-
-		if recipe.CookTime.Valid {
-			resBody.CookTime = &recipe.CookTime.String
-		}
-
-		if recipe.TotalTime.Valid {
-			resBody.TotalTime = &recipe.TotalTime.String
 		}
 
 		err = respondWithJSON(w, http.StatusCreated, &resBody)
 
 		if err != nil {
 			log.Println("Error responding to request: ", err)
+		}
+	}
+}
+
+func (c *config) handleGetRecipe() http.HandlerFunc {
+	type response struct {
+		ID          int64     `json:"id"`
+		CreatedAt   time.Time `json:"created_at"`
+		UpdatedAt   time.Time `json:"updated_at"`
+		Name        string    `json:"name"`
+		Description *string   `json:"description"`
+		Url         *string   `json:"url"`
+		PrepTime    *string   `json:"prep_time"`
+		CookTime    *string   `json:"cook_time"`
+		TotalTime   *string   `json:"total_time"`
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		idString := chi.URLParam(r, "recipe_id")
+
+		id, err := strconv.Atoi(idString)
+
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Id is not an integer")
+			return
+		}
+
+		recipe, err := c.DB.GetRecipe(r.Context(), int64(id))
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		resBody := response{
+			ID:          recipe.ID,
+			CreatedAt:   recipe.CreatedAt,
+			UpdatedAt:   recipe.UpdatedAt,
+			Name:        recipe.Name,
+			Description: stringPointerFromSqlNullString(recipe.Description),
+			Url:         stringPointerFromSqlNullString(recipe.Url),
+			PrepTime:    stringPointerFromSqlNullString(recipe.PrepTime),
+			CookTime:    stringPointerFromSqlNullString(recipe.CookTime),
+			TotalTime:   stringPointerFromSqlNullString(recipe.TotalTime),
+		}
+
+		err = respondWithJSON(w, http.StatusOK, resBody)
+		if err != nil {
+			log.Println(err.Error())
 		}
 	}
 }
