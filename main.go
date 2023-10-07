@@ -75,6 +75,7 @@ func main() {
 	v1.Get("/recipes/{recipe_id}", c.handleGetRecipe())
 
 	v1.Post("/users", c.handlePostUser())
+	v1.Get("/login", c.handleLogin())
 
 	server := &http.Server{
 		Addr:              "0.0.0.0:" + port,
