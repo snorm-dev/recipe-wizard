@@ -95,19 +95,22 @@ func (c *config) handlePing() http.HandlerFunc {
 	}
 }
 
-func respondWithJSON(w http.ResponseWriter, code int, body interface{}) error {
+func respondWithJSON(w http.ResponseWriter, code int, body interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
 	bytes, err := json.Marshal(body)
 
 	if err != nil {
-		return err
+		log.Println("Could not marshal json: ", err)
+		return
 	}
 
 	_, err = w.Write(bytes)
 
-	return err
+	if err != nil {
+		log.Println("Could not write json to output: ", err)
+	}
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
@@ -115,11 +118,7 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 		Error string `json:"error"`
 	}
 
-	err := respondWithJSON(w, code, response{Error: message})
-
-	if err != nil {
-		log.Println("Could not respond with error: ", err)
-	}
+	respondWithJSON(w, code, response{Error: message})
 }
 
 func stringPointerFromSqlNullString(s sql.NullString) *string {

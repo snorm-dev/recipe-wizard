@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -155,11 +154,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			resBody.Ingredients[i] = ingredient
 		}
 
-		err = respondWithJSON(w, http.StatusCreated, &resBody)
-
-		if err != nil {
-			log.Println("Error responding to request: ", err)
-		}
+		respondWithJSON(w, http.StatusCreated, &resBody)
 	}
 }
 
@@ -204,10 +199,7 @@ func (c *config) handleGetRecipe() http.HandlerFunc {
 			TotalTime:   stringPointerFromSqlNullString(recipe.TotalTime),
 		}
 
-		err = respondWithJSON(w, http.StatusOK, resBody)
-		if err != nil {
-			log.Println(err.Error())
-		}
+		respondWithJSON(w, http.StatusOK, resBody)
 	}
 }
 
@@ -250,10 +242,6 @@ func (c *config) handleGetRecipes() http.HandlerFunc {
 			resBody[i] = r
 		}
 
-		err = respondWithJSON(w, http.StatusOK, resBody)
-
-		if err != nil {
-			log.Println(err.Error())
-		}
+		respondWithJSON(w, http.StatusOK, resBody)
 	}
 }
