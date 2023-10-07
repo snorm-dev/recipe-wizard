@@ -5,14 +5,17 @@ go 1.20
 require (
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-chi/cors v1.2.1
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.12.0
-	github.com/golang-jwt/jwt/v5 v5.0.0
 )
 
 require github.com/go-sql-driver/mysql v1.7.1
 
-require github.com/kkyr/go-recipe v0.4.0
+require (
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/kkyr/go-recipe v0.4.0
+)
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0 // indirect
