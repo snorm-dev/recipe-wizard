@@ -15,4 +15,4 @@ CREATE TABLE users (
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE users;
--- +
+-- +goose StatementEnd
