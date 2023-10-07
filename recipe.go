@@ -66,10 +66,10 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			return t.String(), ok
 		}
 
-		description := sqlNullStringFromString(s.Description())
-		prepTime := sqlNullStringFromString(timeDurationToString(s.PrepTime()))
-		cookTime := sqlNullStringFromString(timeDurationToString(s.CookTime()))
-		totalTime := sqlNullStringFromString(timeDurationToString(s.TotalTime()))
+		description := sqlNullStringFromOkString(s.Description())
+		prepTime := sqlNullStringFromOkString(timeDurationToString(s.PrepTime()))
+		cookTime := sqlNullStringFromOkString(timeDurationToString(s.CookTime()))
+		totalTime := sqlNullStringFromOkString(timeDurationToString(s.TotalTime()))
 
 		now := time.Now()
 		url := sql.NullString{

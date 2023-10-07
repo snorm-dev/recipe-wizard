@@ -16,7 +16,8 @@ import (
 )
 
 type config struct {
-	DB *database.Queries
+	DB        *database.Queries
+	JwtSecret []byte
 }
 
 func main() {
@@ -44,8 +45,15 @@ func main() {
 		log.Fatal("Could not open database connection")
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	if jwtSecret == "" {
+		log.Fatal("Could not locate JWT secret")
+	}
+
 	c := config{
-		DB: database.New(db),
+		DB:        database.New(db),
+		JwtSecret: []byte(jwtSecret),
 	}
 
 	r := chi.NewRouter()
@@ -65,6 +73,8 @@ func main() {
 	v1.Post("/recipes", c.handlePostRecipe())
 	v1.Get("/recipes", c.handleGetRecipes())
 	v1.Get("/recipes/{recipe_id}", c.handleGetRecipe())
+
+	v1.Post("/users", c.handlePostUser())
 
 	server := &http.Server{
 		Addr:              "0.0.0.0:" + port,
@@ -119,6 +129,14 @@ func stringPointerFromSqlNullString(s sql.NullString) *string {
 	return &s.String
 }
 
-func sqlNullStringFromString(s string, ok bool) sql.NullString {
+func sqlNullStringFromOkString(s string, ok bool) sql.NullString {
 	return sql.NullString{Valid: ok, String: s}
+}
+
+func sqlNullStringFromStringPointer(s *string) sql.NullString {
+	if s == nil {
+		return sql.NullString{}
+	} else {
+		return sql.NullString{Valid: true, String: *s}
+	}
 }
