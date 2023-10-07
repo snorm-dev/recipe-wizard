@@ -42,6 +42,7 @@ func (c *config) handlePostUser() http.HandlerFunc {
 
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
 		}
 
 		firstName := sqlNullStringFromStringPointer(req.FirstName)
@@ -124,6 +125,22 @@ func (c *config) handlePostUser() http.HandlerFunc {
 		if err != nil {
 			log.Println(err.Error())
 		}
+
+	}
+}
+
+func (c *config) handleLogin() http.HandlerFunc {
+	type request struct {
+		Username         string `json:"username"`
+		Password         string `json:"password"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
+	}
+
+	type response struct {
+		Token string `json:"token"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
