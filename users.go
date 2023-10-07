@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -120,12 +119,7 @@ func (c *config) handlePostUser() http.HandlerFunc {
 			Token:     tokenString,
 		}
 
-		err = respondWithJSON(w, http.StatusCreated, &res)
-
-		if err != nil {
-			log.Println(err.Error())
-		}
-
+		respondWithJSON(w, http.StatusCreated, &res)
 	}
 }
 
