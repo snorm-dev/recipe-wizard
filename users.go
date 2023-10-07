@@ -134,7 +134,54 @@ func (c *config) handleLogin() http.HandlerFunc {
 		Token string `json:"token"`
 	}
 
-	return func(w http.ResponseWriter, r *http.Request) {
+	maxJwtDuration := time.Hour * 24
 
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := request{}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		user, err := c.DB.GetUserByUsername(r.Context(), req.Username)
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(req.Password)); err != nil {
+			respondWithError(w, http.StatusUnauthorized, "Incorrect Password")
+			return
+		}
+
+		jwtDuration := time.Second * time.Duration(req.ExpiresInSeconds)
+		if req.ExpiresInSeconds <= 0 || jwtDuration > maxJwtDuration {
+			jwtDuration = maxJwtDuration
+		}
+
+		issuedAt := jwt.NewNumericDate(time.Now())
+		expiresAt := jwt.NewNumericDate(issuedAt.Add(jwtDuration))
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+			Issuer:    "recipe-wizard",
+			IssuedAt:  issuedAt,
+			ExpiresAt: expiresAt,
+			Subject:   fmt.Sprint(user.ID),
+		})
+
+		tokenString, err := token.SignedString(c.JwtSecret)
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		res := response{
+			Token: tokenString,
+		}
+
+		respondWithJSON(w, http.StatusOK, &res)
 	}
 }
