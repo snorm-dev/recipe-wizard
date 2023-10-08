@@ -16,7 +16,7 @@ import (
 )
 
 type config struct {
-	DB        *database.Queries
+	DB        database.Querier
 	JwtSecret []byte
 }
 
