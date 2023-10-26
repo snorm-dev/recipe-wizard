@@ -198,7 +198,7 @@ func (c *config) middlewareExtractUser(next http.Handler) http.HandlerFunc {
 			return
 		}
 
-		re := regexp.MustCompile("\\s+")
+		re := regexp.MustCompile(`\s+`)
 		authList := re.Split(authString, -1)
 
 		if len(authList) != 2 || authList[0] != "Bearer" {
