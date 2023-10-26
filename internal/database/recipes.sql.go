@@ -12,8 +12,8 @@ import (
 )
 
 const createRecipe = `-- name: CreateRecipe :exec
-INSERT INTO recipes(created_at, updated_at, name, description, url, prep_time, cook_time, total_time)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO recipes(created_at, updated_at, name, description, url, prep_time, cook_time, total_time, owner_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateRecipeParams struct {
@@ -25,6 +25,7 @@ type CreateRecipeParams struct {
 	PrepTime    sql.NullString
 	CookTime    sql.NullString
 	TotalTime   sql.NullString
+	OwnerID     int64
 }
 
 func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) error {
@@ -37,12 +38,13 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) erro
 		arg.PrepTime,
 		arg.CookTime,
 		arg.TotalTime,
+		arg.OwnerID,
 	)
 	return err
 }
 
 const getRecipe = `-- name: GetRecipe :one
-SELECT id, created_at, updated_at, name, description, url, prep_time, cook_time, total_time FROM recipes
+SELECT id, created_at, updated_at, name, description, url, prep_time, cook_time, total_time, owner_id FROM recipes
 WHERE id = ?
 `
 
@@ -59,16 +61,18 @@ func (q *Queries) GetRecipe(ctx context.Context, id int64) (Recipe, error) {
 		&i.PrepTime,
 		&i.CookTime,
 		&i.TotalTime,
+		&i.OwnerID,
 	)
 	return i, err
 }
 
-const getRecipes = `-- name: GetRecipes :many
-SELECT id, created_at, updated_at, name, description, url, prep_time, cook_time, total_time FROM recipes
+const getRecipesForUser = `-- name: GetRecipesForUser :many
+SELECT id, created_at, updated_at, name, description, url, prep_time, cook_time, total_time, owner_id FROM recipes
+WHERE owner_id = ?
 `
 
-func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
-	rows, err := q.db.QueryContext(ctx, getRecipes)
+func (q *Queries) GetRecipesForUser(ctx context.Context, ownerID int64) ([]Recipe, error) {
+	rows, err := q.db.QueryContext(ctx, getRecipesForUser, ownerID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +90,7 @@ func (q *Queries) GetRecipes(ctx context.Context) ([]Recipe, error) {
 			&i.PrepTime,
 			&i.CookTime,
 			&i.TotalTime,
+			&i.OwnerID,
 		); err != nil {
 			return nil, err
 		}

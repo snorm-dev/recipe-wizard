@@ -13,6 +13,34 @@ import (
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
 
+type recipeResponse struct {
+	ID          int64     `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description,omitempty"`
+	Url         *string   `json:"url,omitempty"`
+	PrepTime    *string   `json:"prep_time,omitempty"`
+	CookTime    *string   `json:"cook_time,omitempty"`
+	TotalTime   *string   `json:"total_time,omitempty"`
+	OwnerId     int64     `json:"owner_id"`
+}
+
+func databaseRecipeToResponse(recipe database.Recipe) recipeResponse {
+	return recipeResponse{
+		ID:          recipe.ID,
+		CreatedAt:   recipe.CreatedAt,
+		UpdatedAt:   recipe.UpdatedAt,
+		Name:        recipe.Name,
+		Description: stringPointerFromSqlNullString(recipe.Description),
+		Url:         stringPointerFromSqlNullString(recipe.Url),
+		PrepTime:    stringPointerFromSqlNullString(recipe.PrepTime),
+		CookTime:    stringPointerFromSqlNullString(recipe.CookTime),
+		TotalTime:   stringPointerFromSqlNullString(recipe.TotalTime),
+		OwnerId:     recipe.OwnerID,
+	}
+}
+
 func (c *config) handlePostRecipe() http.HandlerFunc {
 	type request struct {
 		Url string `json:"url"`
@@ -27,16 +55,8 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 	}
 
 	type response struct {
-		ID          int64        `json:"id"`
-		CreatedAt   time.Time    `json:"created_at"`
-		UpdatedAt   time.Time    `json:"updated_at"`
-		Name        string       `json:"name"`
-		Description *string      `json:"description,omitempty"`
-		Url         *string      `json:"url,omitempty"`
-		PrepTime    *string      `json:"prep_time,omitempty"`
-		CookTime    *string      `json:"cook_time,omitempty"`
-		TotalTime   *string      `json:"total_time,omitempty"`
-		Ingredients []ingredient `json:"ingredients"`
+		recipeResponse
+		Ingredients []ingredient `json:"ingredients:omitempty"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -76,6 +96,14 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			Valid:  true,
 		}
 
+		var user database.User
+		if value := r.Context().Value(ContextUserKey); value != nil {
+			user = value.(database.User)
+		} else {
+			respondWithError(w, http.StatusInternalServerError, "Could not get user")
+			return
+		}
+
 		err = c.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
 			CreatedAt:   now,
 			UpdatedAt:   now,
@@ -85,6 +113,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			CookTime:    cookTime,
 			PrepTime:    prepTime,
 			TotalTime:   totalTime,
+			OwnerID:     user.ID,
 		})
 
 		if err != nil {
@@ -130,16 +159,8 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 		}
 
 		resBody := response{
-			ID:          id,
-			CreatedAt:   recipe.CreatedAt,
-			UpdatedAt:   recipe.UpdatedAt,
-			Name:        name,
-			Description: stringPointerFromSqlNullString(recipe.Description),
-			Url:         stringPointerFromSqlNullString(recipe.Url),
-			PrepTime:    stringPointerFromSqlNullString(recipe.PrepTime),
-			CookTime:    stringPointerFromSqlNullString(recipe.CookTime),
-			TotalTime:   stringPointerFromSqlNullString(recipe.TotalTime),
-			Ingredients: make([]ingredient, len(dbIngredients)),
+			recipeResponse: databaseRecipeToResponse(recipe),
+			Ingredients:    make([]ingredient, len(dbIngredients)),
 		}
 
 		for i, dbIngredient := range dbIngredients {
@@ -159,17 +180,6 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 }
 
 func (c *config) handleGetRecipe() http.HandlerFunc {
-	type response struct {
-		ID          int64     `json:"id"`
-		CreatedAt   time.Time `json:"created_at"`
-		UpdatedAt   time.Time `json:"updated_at"`
-		Name        string    `json:"name"`
-		Description *string   `json:"description"`
-		Url         *string   `json:"url"`
-		PrepTime    *string   `json:"prep_time"`
-		CookTime    *string   `json:"cook_time"`
-		TotalTime   *string   `json:"total_time"`
-	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		idString := chi.URLParam(r, "recipe_id")
 
@@ -187,38 +197,39 @@ func (c *config) handleGetRecipe() http.HandlerFunc {
 			return
 		}
 
-		resBody := response{
-			ID:          recipe.ID,
-			CreatedAt:   recipe.CreatedAt,
-			UpdatedAt:   recipe.UpdatedAt,
-			Name:        recipe.Name,
-			Description: stringPointerFromSqlNullString(recipe.Description),
-			Url:         stringPointerFromSqlNullString(recipe.Url),
-			PrepTime:    stringPointerFromSqlNullString(recipe.PrepTime),
-			CookTime:    stringPointerFromSqlNullString(recipe.CookTime),
-			TotalTime:   stringPointerFromSqlNullString(recipe.TotalTime),
+		var user database.User
+		if value := r.Context().Value(ContextUserKey); value != nil {
+			user = value.(database.User)
+		} else {
+			respondWithError(w, http.StatusInternalServerError, "Could not get user")
+			return
 		}
+
+		if user.ID != recipe.OwnerID {
+			respondWithError(w, http.StatusForbidden, "User does not own recipe.")
+			return
+		}
+
+		resBody := databaseRecipeToResponse(recipe)
 
 		respondWithJSON(w, http.StatusOK, resBody)
 	}
 }
 
 func (c *config) handleGetRecipes() http.HandlerFunc {
-	type recipe struct {
-		ID          int64     `json:"id"`
-		CreatedAt   time.Time `json:"created_at"`
-		UpdatedAt   time.Time `json:"updated_at"`
-		Name        string    `json:"name"`
-		Description *string   `json:"description"`
-		Url         *string   `json:"url"`
-		PrepTime    *string   `json:"prep_time"`
-		CookTime    *string   `json:"cook_time"`
-		TotalTime   *string   `json:"total_time"`
-	}
-	type response []recipe
+	type response []recipeResponse
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		recipes, err := c.DB.GetRecipes(r.Context())
+
+		var user database.User
+		if value := r.Context().Value(ContextUserKey); value != nil {
+			user = value.(database.User)
+		} else {
+			respondWithError(w, http.StatusInternalServerError, "Could not get user")
+			return
+		}
+
+		recipes, err := c.DB.GetRecipesForUser(r.Context(), user.ID)
 
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
@@ -228,17 +239,7 @@ func (c *config) handleGetRecipes() http.HandlerFunc {
 		resBody := make(response, len(recipes))
 
 		for i, dbRecipe := range recipes {
-			r := recipe{
-				ID:          dbRecipe.ID,
-				CreatedAt:   dbRecipe.CreatedAt,
-				UpdatedAt:   dbRecipe.UpdatedAt,
-				Name:        dbRecipe.Name,
-				Description: stringPointerFromSqlNullString(dbRecipe.Description),
-				Url:         stringPointerFromSqlNullString(dbRecipe.Url),
-				PrepTime:    stringPointerFromSqlNullString(dbRecipe.PrepTime),
-				CookTime:    stringPointerFromSqlNullString(dbRecipe.CookTime),
-				TotalTime:   stringPointerFromSqlNullString(dbRecipe.TotalTime),
-			}
+			r := databaseRecipeToResponse(dbRecipe)
 			resBody[i] = r
 		}
 

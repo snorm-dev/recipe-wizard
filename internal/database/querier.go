@@ -16,7 +16,7 @@ type Querier interface {
 	GetIngredientsForRecipe(ctx context.Context, recipeID int64) ([]Ingredient, error)
 	GetLastInsertID(ctx context.Context) (int64, error)
 	GetRecipe(ctx context.Context, id int64) (Recipe, error)
-	GetRecipes(ctx context.Context) ([]Recipe, error)
+	GetRecipesForUser(ctx context.Context, ownerID int64) ([]Recipe, error)
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 }

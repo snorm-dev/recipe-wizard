@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +21,10 @@ type config struct {
 	DB        database.Querier
 	JwtSecret []byte
 }
+
+type ContextKey string
+
+const ContextUserKey ContextKey = "user-key"
 
 func main() {
 	err := godotenv.Load()
@@ -67,15 +73,15 @@ func main() {
 	}))
 
 	v1 := chi.NewRouter()
-	r.Mount("/v1", v1)
+	r.Mount("/v1", middlewareLogRequest(v1))
 
 	v1.Get("/ping", c.handlePing())
-	v1.Post("/recipes", c.handlePostRecipe())
-	v1.Get("/recipes", c.handleGetRecipes())
-	v1.Get("/recipes/{recipe_id}", c.handleGetRecipe())
+	v1.Post("/recipes", c.middlewareExtractUser(c.handlePostRecipe()))
+	v1.Get("/recipes", c.middlewareExtractUser(c.handleGetRecipes()))
+	v1.Get("/recipes/{recipe_id}", c.middlewareExtractUser(c.handleGetRecipe()))
 
 	v1.Post("/users", c.handlePostUser())
-	v1.Get("/login", c.handleLogin())
+	v1.Post("/login", c.handleLogin())
 
 	server := &http.Server{
 		Addr:              "0.0.0.0:" + port,
@@ -138,5 +144,21 @@ func sqlNullStringFromStringPointer(s *string) sql.NullString {
 		return sql.NullString{}
 	} else {
 		return sql.NullString{Valid: true, String: *s}
+	}
+}
+
+func middlewareLogRequest(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("REQUEST: %v %v\n", r.Method, r.URL)
+		log.Print("\tHeaders:\n")
+		for key, val := range r.Header {
+			log.Printf("\t\t%v: %v\n", key, val)
+		}
+		bodyBytes, err := io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		if err == nil {
+			log.Printf("\tBody: %v\n", string(bodyBytes))
+		}
+		next.ServeHTTP(w, r)
 	}
 }

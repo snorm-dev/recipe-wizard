@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -183,5 +187,63 @@ func (c *config) handleLogin() http.HandlerFunc {
 		}
 
 		respondWithJSON(w, http.StatusOK, &res)
+	}
+}
+
+func (c *config) middlewareExtractUser(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authString := r.Header.Get("Authorization")
+		if authString == "" {
+			respondWithError(w, http.StatusUnauthorized, "Missing Authorization Header")
+			return
+		}
+
+		re := regexp.MustCompile("\\s+")
+		authList := re.Split(authString, -1)
+
+		if len(authList) != 2 || authList[0] != "Bearer" {
+			respondWithError(w, http.StatusUnauthorized, "Malformed Authorization Header")
+			return
+		}
+
+		tokenString := authList[1]
+
+		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+			return []byte(c.JwtSecret), nil
+		})
+
+		if err != nil {
+			respondWithError(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		userIdString, err := token.Claims.GetSubject()
+
+		if err != nil {
+			respondWithError(w, http.StatusUnauthorized, "No user specified")
+			return
+		}
+
+		userId, err := strconv.Atoi(userIdString)
+
+		if err != nil {
+			respondWithError(w, http.StatusUnauthorized, "Invalid user id")
+			return
+		}
+
+		user, err := c.DB.GetUser(r.Context(), int64(userId))
+
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusUnauthorized, "User does not exist")
+			return
+		} else if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Could not get user from database")
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), ContextUserKey, user)
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
 	}
 }

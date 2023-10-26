@@ -28,6 +28,7 @@ type Recipe struct {
 	PrepTime    sql.NullString
 	CookTime    sql.NullString
 	TotalTime   sql.NullString
+	OwnerID     int64
 }
 
 type User struct {
