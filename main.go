@@ -80,6 +80,8 @@ func main() {
 	v1.Get("/recipes", c.middlewareExtractUser(c.handleGetRecipes()))
 	v1.Get("/recipes/{recipe_id}", c.middlewareExtractUser(c.handleGetRecipe()))
 
+	v1.Get("/recipes/{recipe_id}/ingredients", c.middlewareExtractUser(c.handleGetIngredients()))
+
 	v1.Post("/users", c.handlePostUser())
 	v1.Post("/login", c.handleLogin())
 
