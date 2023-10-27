@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -16,8 +18,13 @@ import (
 )
 
 type config struct {
-	DB *database.Queries
+	DB        database.Querier
+	JwtSecret []byte
 }
+
+type ContextKey string
+
+const ContextUserKey ContextKey = "user-key"
 
 func main() {
 	err := godotenv.Load()
@@ -44,8 +51,15 @@ func main() {
 		log.Fatal("Could not open database connection")
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	if jwtSecret == "" {
+		log.Fatal("Could not locate JWT secret")
+	}
+
 	c := config{
-		DB: database.New(db),
+		DB:        database.New(db),
+		JwtSecret: []byte(jwtSecret),
 	}
 
 	r := chi.NewRouter()
@@ -59,12 +73,15 @@ func main() {
 	}))
 
 	v1 := chi.NewRouter()
-	r.Mount("/v1", v1)
+	r.Mount("/v1", middlewareLogRequest(v1))
 
 	v1.Get("/ping", c.handlePing())
-	v1.Post("/recipes", c.handlePostRecipe())
-	v1.Get("/recipes", c.handleGetRecipes())
-	v1.Get("/recipes/{recipe_id}", c.handleGetRecipe())
+	v1.Post("/recipes", c.middlewareExtractUser(c.handlePostRecipe()))
+	v1.Get("/recipes", c.middlewareExtractUser(c.handleGetRecipes()))
+	v1.Get("/recipes/{recipe_id}", c.middlewareExtractUser(c.handleGetRecipe()))
+
+	v1.Post("/users", c.handlePostUser())
+	v1.Post("/login", c.handleLogin())
 
 	server := &http.Server{
 		Addr:              "0.0.0.0:" + port,
@@ -85,19 +102,22 @@ func (c *config) handlePing() http.HandlerFunc {
 	}
 }
 
-func respondWithJSON(w http.ResponseWriter, code int, body interface{}) error {
+func respondWithJSON(w http.ResponseWriter, code int, body interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
 	bytes, err := json.Marshal(body)
 
 	if err != nil {
-		return err
+		log.Println("Could not marshal json: ", err)
+		return
 	}
 
 	_, err = w.Write(bytes)
 
-	return err
+	if err != nil {
+		log.Println("Could not write json to output: ", err)
+	}
 }
 
 func respondWithError(w http.ResponseWriter, code int, message string) {
@@ -105,11 +125,7 @@ func respondWithError(w http.ResponseWriter, code int, message string) {
 		Error string `json:"error"`
 	}
 
-	err := respondWithJSON(w, code, response{Error: message})
-
-	if err != nil {
-		log.Println("Could not respond with error: ", err)
-	}
+	respondWithJSON(w, code, response{Error: message})
 }
 
 func stringPointerFromSqlNullString(s sql.NullString) *string {
@@ -119,6 +135,30 @@ func stringPointerFromSqlNullString(s sql.NullString) *string {
 	return &s.String
 }
 
-func sqlNullStringFromString(s string, ok bool) sql.NullString {
+func sqlNullStringFromOkString(s string, ok bool) sql.NullString {
 	return sql.NullString{Valid: ok, String: s}
+}
+
+func sqlNullStringFromStringPointer(s *string) sql.NullString {
+	if s == nil {
+		return sql.NullString{}
+	} else {
+		return sql.NullString{Valid: true, String: *s}
+	}
+}
+
+func middlewareLogRequest(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("REQUEST: %v %v\n", r.Method, r.URL)
+		log.Print("\tHeaders:\n")
+		for key, val := range r.Header {
+			log.Printf("\t\t%v: %v\n", key, val)
+		}
+		bodyBytes, err := io.ReadAll(r.Body)
+		r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		if err == nil {
+			log.Printf("\tBody: %v\n", string(bodyBytes))
+		}
+		next.ServeHTTP(w, r)
+	}
 }

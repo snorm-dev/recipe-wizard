@@ -6,3 +6,5 @@ sql:
     gen:
       go:
         out: "internal/database"
+        emit_interface: true
+

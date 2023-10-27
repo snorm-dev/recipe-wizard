@@ -28,4 +28,15 @@ type Recipe struct {
 	PrepTime    sql.NullString
 	CookTime    sql.NullString
 	TotalTime   sql.NullString
+	OwnerID     int64
+}
+
+type User struct {
+	ID             int64
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Username       string
+	HashedPassword string
+	FirstName      sql.NullString
+	LastName       sql.NullString
 }
