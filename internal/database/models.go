@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+type GroceryList struct {
+	ID        int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name      string
+	OwnerID   int64
+}
+
 type Ingredient struct {
 	ID          int64
 	CreatedAt   time.Time
