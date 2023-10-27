@@ -104,7 +104,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
-		err = c.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
+		result, err := c.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
 			CreatedAt:   now,
 			UpdatedAt:   now,
 			Url:         url,
@@ -121,7 +121,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
-		id, err := c.DB.GetLastInsertID(r.Context())
+		id, err := result.LastInsertId()
 
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not retrieve id: %v", err))
@@ -137,7 +137,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 		if ingredients, ok := s.Ingredients(); ok {
 			for _, ingredient := range ingredients {
 				now = time.Now()
-				err = c.DB.CreateIngredient(r.Context(), database.CreateIngredientParams{
+				_, err := c.DB.CreateIngredient(r.Context(), database.CreateIngredientParams{
 					CreatedAt:   now,
 					UpdatedAt:   now,
 					Name:        ingredient,

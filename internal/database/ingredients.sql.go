@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const createIngredient = `-- name: CreateIngredient :exec
+const createIngredient = `-- name: CreateIngredient :execresult
 INSERT INTO ingredients(created_at, updated_at, name, description, recipe_id)
 VALUES (?, ?, ?, ?, ?)
 `
@@ -24,15 +24,14 @@ type CreateIngredientParams struct {
 	RecipeID    int64
 }
 
-func (q *Queries) CreateIngredient(ctx context.Context, arg CreateIngredientParams) error {
-	_, err := q.db.ExecContext(ctx, createIngredient,
+func (q *Queries) CreateIngredient(ctx context.Context, arg CreateIngredientParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createIngredient,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.Name,
 		arg.Description,
 		arg.RecipeID,
 	)
-	return err
 }
 
 const getIngredient = `-- name: GetIngredient :one

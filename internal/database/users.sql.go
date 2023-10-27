@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const createUser = `-- name: CreateUser :exec
+const createUser = `-- name: CreateUser :execresult
 INSERT INTO users (created_at, updated_at, username, hashed_password, first_name, last_name)
 VALUES (?, ?, ?, ?, ?, ?)
 `
@@ -25,8 +25,8 @@ type CreateUserParams struct {
 	LastName       sql.NullString
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.ExecContext(ctx, createUser,
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createUser,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.Username,
@@ -34,7 +34,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 		arg.FirstName,
 		arg.LastName,
 	)
-	return err
 }
 
 const getUser = `-- name: GetUser :one

@@ -1,4 +1,4 @@
--- name: CreateRecipe :exec
+-- name: CreateRecipe :execresult
 INSERT INTO recipes(created_at, updated_at, name, description, url, prep_time, cook_time, total_time, owner_id)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
