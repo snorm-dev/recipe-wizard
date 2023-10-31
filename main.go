@@ -83,6 +83,8 @@ func main() {
 	v1.Get("/recipes/{recipe_id}/ingredients", c.middlewareExtractUser(c.handleGetIngredients()))
 
 	v1.Post("/grocery-lists", c.middlewareExtractUser(c.handlePostGroceryList()))
+	v1.Get("/grocery-lists", c.middlewareExtractUser(c.handleGetGroceryLists()))
+	v1.Get("/grocery-lists/{grocery_list_id}", c.middlewareExtractUser(c.handleGetGroceryList()))
 
 	v1.Post("/users", c.handlePostUser())
 	v1.Post("/login", c.handleLogin())

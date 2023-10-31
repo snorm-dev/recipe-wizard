@@ -4,19 +4,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
+
+type groceryListResponse struct {
+	database.GroceryList
+}
+
+func databaseGroceryListToResponse(gl database.GroceryList) groceryListResponse {
+	return groceryListResponse{
+		GroceryList: gl,
+	}
+}
 
 func (c *config) handlePostGroceryList() http.HandlerFunc {
 	type request struct {
 		Name string `json:"name"`
-	}
-
-	type response struct {
-		Name    string `json:"name"`
-		OwnerID int64  `json:"owner_id"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -65,5 +72,73 @@ func (c *config) handlePostGroceryList() http.HandlerFunc {
 		}
 
 		respondWithJSON(w, http.StatusCreated, &groceryList)
+	}
+}
+
+func (c *config) handleGetGroceryList() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idString := chi.URLParam(r, "grocery_list_id")
+
+		id, err := strconv.Atoi(idString)
+
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Id is not an integer")
+			return
+		}
+
+		groceryList, err := c.DB.GetGroceryList(r.Context(), int64(id))
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		var user database.User
+		if value := r.Context().Value(ContextUserKey); value != nil {
+			user = value.(database.User)
+		} else {
+			respondWithError(w, http.StatusInternalServerError, "Could not get user")
+			return
+		}
+
+		if user.ID != groceryList.OwnerID {
+			respondWithError(w, http.StatusForbidden, "User does not own grocery list.")
+			return
+		}
+
+		resBody := databaseGroceryListToResponse(groceryList)
+
+		respondWithJSON(w, http.StatusOK, resBody)
+	}
+}
+
+func (c *config) handleGetGroceryLists() http.HandlerFunc {
+	type response []groceryListResponse
+
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		var user database.User
+		if value := r.Context().Value(ContextUserKey); value != nil {
+			user = value.(database.User)
+		} else {
+			respondWithError(w, http.StatusInternalServerError, "Could not get user")
+			return
+		}
+
+		groceryLists, err := c.DB.GetGroceryListsForUser(r.Context(), user.ID)
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		resBody := make(response, len(groceryLists))
+
+		for i, dbGroceryList := range groceryLists {
+			r := databaseGroceryListToResponse(dbGroceryList)
+			resBody[i] = r
+		}
+
+		respondWithJSON(w, http.StatusOK, resBody)
 	}
 }
