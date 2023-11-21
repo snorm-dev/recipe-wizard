@@ -12,12 +12,20 @@ import (
 )
 
 type groceryListResponse struct {
-	database.GroceryList
+	ID        int64     `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Name      string    `json:"name"`
+	OwnerID   int64     `json:"owner_id"`
 }
 
 func databaseGroceryListToResponse(gl database.GroceryList) groceryListResponse {
 	return groceryListResponse{
-		GroceryList: gl,
+		ID:        gl.ID,
+		CreatedAt: gl.CreatedAt,
+		UpdatedAt: gl.UpdatedAt,
+		Name:      gl.Name,
+		OwnerID:   gl.OwnerID,
 	}
 }
 
