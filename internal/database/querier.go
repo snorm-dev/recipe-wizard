@@ -10,6 +10,7 @@ import (
 )
 
 type Querier interface {
+	AddRecipeToGroceryList(ctx context.Context, arg AddRecipeToGroceryListParams) (sql.Result, error)
 	CreateGroceryList(ctx context.Context, arg CreateGroceryListParams) (sql.Result, error)
 	CreateIngredient(ctx context.Context, arg CreateIngredientParams) (sql.Result, error)
 	CreateRecipe(ctx context.Context, arg CreateRecipeParams) (sql.Result, error)
@@ -19,7 +20,9 @@ type Querier interface {
 	GetIngredient(ctx context.Context, id int64) (Ingredient, error)
 	GetIngredientsForRecipe(ctx context.Context, recipeID int64) ([]Ingredient, error)
 	GetRecipe(ctx context.Context, id int64) (Recipe, error)
+	GetRecipeInstance(ctx context.Context, id int64) (RecipeInstance, error)
 	GetRecipesForUser(ctx context.Context, ownerID int64) ([]Recipe, error)
+	GetRecipesInGroceryList(ctx context.Context, groceryListID int64) ([]Recipe, error)
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 }

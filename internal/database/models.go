@@ -39,6 +39,14 @@ type Recipe struct {
 	OwnerID     int64
 }
 
+type RecipeInstance struct {
+	ID            int64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	GroceryListID int64
+	RecipeID      int64
+}
+
 type User struct {
 	ID             int64
 	CreatedAt      time.Time
