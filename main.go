@@ -72,6 +72,8 @@ func main() {
 		MaxAge:           300,
 	}))
 
+	r.Get("/", c.handleIndex())
+
 	v1 := chi.NewRouter()
 	r.Mount("/v1", middlewareLogRequest(v1))
 
@@ -102,6 +104,27 @@ func main() {
 
 	log.Println("Listening on port: ", port)
 	log.Fatal(server.ListenAndServe())
+}
+
+func (c *config) handleIndex() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		myPage := `
+		<!DOCTYPE html>
+		<html>
+		<body>
+
+		<h1>Recipe Wizard</h1>
+		<p>Hello, Rachel!</p>
+
+		</body>
+		</html>
+		`
+		_, err := w.Write([]byte(myPage))
+
+		if err != nil {
+			log.Println("Could not respond to index request: ", err)
+		}
+	}
 }
 
 func (c *config) handlePing() http.HandlerFunc {
