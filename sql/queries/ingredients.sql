@@ -1,4 +1,4 @@
--- name: CreateIngredient :exec
+-- name: CreateIngredient :execresult
 INSERT INTO ingredients(created_at, updated_at, name, description, recipe_id)
 VALUES (?, ?, ?, ?, ?);
 

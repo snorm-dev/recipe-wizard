@@ -14,19 +14,25 @@ import (
 )
 
 type recipeResponse struct {
-	ID          int64     `json:"id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Name        string    `json:"name"`
-	Description *string   `json:"description,omitempty"`
-	Url         *string   `json:"url,omitempty"`
-	PrepTime    *string   `json:"prep_time,omitempty"`
-	CookTime    *string   `json:"cook_time,omitempty"`
-	TotalTime   *string   `json:"total_time,omitempty"`
-	OwnerId     int64     `json:"owner_id"`
+	ID          int64                `json:"id"`
+	CreatedAt   time.Time            `json:"created_at"`
+	UpdatedAt   time.Time            `json:"updated_at"`
+	Name        string               `json:"name"`
+	Description *string              `json:"description,omitempty"`
+	Url         *string              `json:"url,omitempty"`
+	PrepTime    *string              `json:"prep_time,omitempty"`
+	CookTime    *string              `json:"cook_time,omitempty"`
+	TotalTime   *string              `json:"total_time,omitempty"`
+	OwnerId     int64                `json:"owner_id"`
+	Ingredients []ingredientResponse `json:"ingredients,omitempty"`
 }
 
-func databaseRecipeToResponse(recipe database.Recipe) recipeResponse {
+func databaseRecipeToResponse(recipe database.Recipe, ingredients []database.Ingredient) recipeResponse {
+	responseIngredients := make([]ingredientResponse, 0, len(ingredients))
+	for _, ingredient := range ingredients {
+		responseIngredients = append(responseIngredients, databaseIngredientToReponse(ingredient))
+	}
+
 	return recipeResponse{
 		ID:          recipe.ID,
 		CreatedAt:   recipe.CreatedAt,
@@ -38,25 +44,13 @@ func databaseRecipeToResponse(recipe database.Recipe) recipeResponse {
 		CookTime:    stringPointerFromSqlNullString(recipe.CookTime),
 		TotalTime:   stringPointerFromSqlNullString(recipe.TotalTime),
 		OwnerId:     recipe.OwnerID,
+		Ingredients: responseIngredients,
 	}
 }
 
 func (c *config) handlePostRecipe() http.HandlerFunc {
 	type request struct {
 		Url string `json:"url"`
-	}
-
-	type ingredient struct {
-		ID          int64     `json:"id"`
-		CreatedAt   time.Time `json:"created_at"`
-		UpdatedAt   time.Time `json:"updated_at"`
-		Name        string    `json:"name"`
-		Description *string   `json:"description"`
-	}
-
-	type response struct {
-		recipeResponse
-		Ingredients []ingredient `json:"ingredients:omitempty"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +98,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
-		err = c.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
+		result, err := c.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
 			CreatedAt:   now,
 			UpdatedAt:   now,
 			Url:         url,
@@ -121,7 +115,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
-		id, err := c.DB.GetLastInsertID(r.Context())
+		id, err := result.LastInsertId()
 
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not retrieve id: %v", err))
@@ -137,7 +131,7 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 		if ingredients, ok := s.Ingredients(); ok {
 			for _, ingredient := range ingredients {
 				now = time.Now()
-				err = c.DB.CreateIngredient(r.Context(), database.CreateIngredientParams{
+				_, err := c.DB.CreateIngredient(r.Context(), database.CreateIngredientParams{
 					CreatedAt:   now,
 					UpdatedAt:   now,
 					Name:        ingredient,
@@ -151,29 +145,14 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			}
 		}
 
-		dbIngredients, err := c.DB.GetIngredientsForRecipe(r.Context(), id)
+		ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), id)
 
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		resBody := response{
-			recipeResponse: databaseRecipeToResponse(recipe),
-			Ingredients:    make([]ingredient, len(dbIngredients)),
-		}
-
-		for i, dbIngredient := range dbIngredients {
-			ingredient := ingredient{
-				ID:        dbIngredient.ID,
-				CreatedAt: dbIngredient.CreatedAt,
-				UpdatedAt: dbIngredient.UpdatedAt,
-				Name:      dbIngredient.Name,
-			}
-			ingredient.Description = stringPointerFromSqlNullString(dbIngredient.Description)
-
-			resBody.Ingredients[i] = ingredient
-		}
+		resBody := databaseRecipeToResponse(recipe, ingredients)
 
 		respondWithJSON(w, http.StatusCreated, &resBody)
 	}
@@ -210,7 +189,14 @@ func (c *config) handleGetRecipe() http.HandlerFunc {
 			return
 		}
 
-		resBody := databaseRecipeToResponse(recipe)
+		ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), recipe.ID)
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		resBody := databaseRecipeToResponse(recipe, ingredients)
 
 		respondWithJSON(w, http.StatusOK, resBody)
 	}
@@ -238,8 +224,16 @@ func (c *config) handleGetRecipes() http.HandlerFunc {
 
 		resBody := make(response, len(recipes))
 
-		for i, dbRecipe := range recipes {
-			r := databaseRecipeToResponse(dbRecipe)
+		for i, recipe := range recipes {
+
+			ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), recipe.ID)
+
+			if err != nil {
+				respondWithError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+
+			r := databaseRecipeToResponse(recipe, ingredients)
 			resBody[i] = r
 		}
 

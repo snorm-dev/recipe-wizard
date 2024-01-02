@@ -63,7 +63,7 @@ func (c *config) handlePostUser() http.HandlerFunc {
 
 		now := time.Now()
 
-		err = c.DB.CreateUser(r.Context(), database.CreateUserParams{
+		result, err := c.DB.CreateUser(r.Context(), database.CreateUserParams{
 			CreatedAt:      now,
 			UpdatedAt:      now,
 			Username:       req.Username,
@@ -77,7 +77,7 @@ func (c *config) handlePostUser() http.HandlerFunc {
 			return
 		}
 
-		id, err := c.DB.GetLastInsertID(r.Context())
+		id, err := result.LastInsertId()
 
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())

@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const createRecipe = `-- name: CreateRecipe :exec
+const createRecipe = `-- name: CreateRecipe :execresult
 INSERT INTO recipes(created_at, updated_at, name, description, url, prep_time, cook_time, total_time, owner_id)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
@@ -28,8 +28,8 @@ type CreateRecipeParams struct {
 	OwnerID     int64
 }
 
-func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) error {
-	_, err := q.db.ExecContext(ctx, createRecipe,
+func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createRecipe,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.Name,
@@ -40,7 +40,6 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) erro
 		arg.TotalTime,
 		arg.OwnerID,
 	)
-	return err
 }
 
 const getRecipe = `-- name: GetRecipe :one

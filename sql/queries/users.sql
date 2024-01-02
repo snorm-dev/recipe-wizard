@@ -1,4 +1,4 @@
--- name: CreateUser :exec
+-- name: CreateUser :execresult
 INSERT INTO users (created_at, updated_at, username, hashed_password, first_name, last_name)
 VALUES (?, ?, ?, ?, ?, ?);
 

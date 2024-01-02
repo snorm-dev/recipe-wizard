@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+type GroceryList struct {
+	ID        int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name      string
+	OwnerID   int64
+}
+
 type Ingredient struct {
 	ID          int64
 	CreatedAt   time.Time
@@ -29,6 +37,14 @@ type Recipe struct {
 	CookTime    sql.NullString
 	TotalTime   sql.NullString
 	OwnerID     int64
+}
+
+type RecipeInstance struct {
+	ID            int64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	GroceryListID int64
+	RecipeID      int64
 }
 
 type User struct {
