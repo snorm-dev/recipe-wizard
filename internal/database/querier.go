@@ -19,6 +19,7 @@ type Querier interface {
 	GetGroceryListsForUser(ctx context.Context, ownerID int64) ([]GroceryList, error)
 	GetIngredient(ctx context.Context, id int64) (Ingredient, error)
 	GetIngredientsForRecipe(ctx context.Context, recipeID int64) ([]Ingredient, error)
+	GetIngredientsInGroceryList(ctx context.Context, groceryListID int64) ([]Ingredient, error)
 	GetRecipe(ctx context.Context, id int64) (Recipe, error)
 	GetRecipeInstance(ctx context.Context, id int64) (RecipeInstance, error)
 	GetRecipesForUser(ctx context.Context, ownerID int64) ([]Recipe, error)

@@ -83,3 +83,40 @@ func (q *Queries) GetGroceryListsForUser(ctx context.Context, ownerID int64) ([]
 	}
 	return items, nil
 }
+
+const getIngredientsInGroceryList = `-- name: GetIngredientsInGroceryList :many
+SELECT i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id FROM ingredients i
+JOIN recipes r ON r.id = i.recipe_id
+JOIN recipe_instances ri ON r.id = ri.recipe_id
+WHERE ri.grocery_list_id = ?
+`
+
+func (q *Queries) GetIngredientsInGroceryList(ctx context.Context, groceryListID int64) ([]Ingredient, error) {
+	rows, err := q.db.QueryContext(ctx, getIngredientsInGroceryList, groceryListID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Ingredient
+	for rows.Next() {
+		var i Ingredient
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.Description,
+			&i.RecipeID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
