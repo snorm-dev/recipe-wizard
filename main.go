@@ -78,6 +78,7 @@ func main() {
 	r.Mount("/v1", middlewareLogRequest(v1))
 
 	v1.Get("/ping", c.handlePing())
+
 	v1.Post("/recipes", c.middlewareExtractUser(c.handlePostRecipe()))
 	v1.Get("/recipes", c.middlewareExtractUser(c.handleGetRecipes()))
 	v1.Get("/recipes/{recipe_id}", c.middlewareExtractUser(c.handleGetRecipe()))
@@ -114,7 +115,19 @@ func (c *config) handleIndex() http.HandlerFunc {
 		<body>
 
 		<h1>Recipe Wizard</h1>
-		<p>Hello, Rachel!</p>
+		<p>The API is available beginning with path /v1 </p>
+		<p>Use the following endpoints:</p>
+		<ul>
+		<li>POST /v1/users</li>
+		<li>POST /v1/login</li>
+		<li>GET/POST /v1/recipes</li>
+		<li>GET /v1/recipes{id}</li>
+		<li>GET/POST /v1/recipes/{id}/ingredients</li>
+		<li>GET/POST /v1/grocery-lists</li>
+		<li>GET /v1/grocery-lists{id}</li>
+		<li>GET/POST /v1/grocery-lists/recipes</li>
+		<li>GET /v1/grocery-lists/ingredients</li>
+		</ul>
 
 		</body>
 		</html>
