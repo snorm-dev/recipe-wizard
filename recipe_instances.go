@@ -42,8 +42,6 @@ func (c *config) handlePostRecipeInGroceryList() http.HandlerFunc {
 		RecipeID int64 `json:"recipe_id"`
 	}
 
-	type response = recipeInstanceResponse
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user database.User
 		if value := r.Context().Value(ContextUserKey); value != nil {
@@ -83,11 +81,6 @@ func (c *config) handlePostRecipeInGroceryList() http.HandlerFunc {
 			return
 		}
 
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
 		now := time.Now()
 
 		result, err := c.DB.CreateRecipeInstance(r.Context(), database.CreateRecipeInstanceParams{
@@ -116,6 +109,11 @@ func (c *config) handlePostRecipeInGroceryList() http.HandlerFunc {
 		}
 
 		ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), reqBody.RecipeID)
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		for _, ingredient := range ingredients {
 			now := time.Now()
@@ -188,7 +186,7 @@ func (c *config) handleGetRecipesInGroceryList() http.HandlerFunc {
 			return
 		}
 
-		resBody := make([]recipeInstanceResponse, len(recipeInstances))
+		var resBody response = make([]recipeInstanceResponse, len(recipeInstances))
 
 		for i, recipe := range recipeInstances {
 
