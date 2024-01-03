@@ -1,7 +1,6 @@
 package ingparse
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -73,7 +72,7 @@ func (p SchollzParser) ParseIngredientLine(line string) (Ingredient, error) {
 	}
 
 	if l := len(ings.Ingredients); l != 1 {
-		return Ingredient{}, errors.New(fmt.Sprintf("incorrect number of ingredients: %d", l))
+		return Ingredient{}, fmt.Errorf("incorrect number of ingredients: %d", l)
 	}
 
 	ing := ings.Ingredients[0]
