@@ -14,12 +14,14 @@ import (
 	"github.com/go-chi/cors"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	"github.com/snorman7384/recipe-wizard/ingparse"
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
 
 type config struct {
-	DB        database.Querier
-	JwtSecret []byte
+	DB               database.Querier
+	JwtSecret        []byte
+	IngredientParser ingparse.IngredientParser
 }
 
 type ContextKey string
@@ -58,8 +60,9 @@ func main() {
 	}
 
 	c := config{
-		DB:        database.New(db),
-		JwtSecret: []byte(jwtSecret),
+		DB:               database.New(db),
+		JwtSecret:        []byte(jwtSecret),
+		IngredientParser: ingparse.SchollzParser{},
 	}
 
 	r := chi.NewRouter()

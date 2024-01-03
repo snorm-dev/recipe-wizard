@@ -12,16 +12,20 @@ import (
 )
 
 const createIngredient = `-- name: CreateIngredient :execresult
-INSERT INTO ingredients(created_at, updated_at, name, description, recipe_id)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO ingredients(created_at, updated_at, name, description, amount, units, standard_amount, standard_units, recipe_id)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateIngredientParams struct {
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Name        string
-	Description sql.NullString
-	RecipeID    int64
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Name           string
+	Description    sql.NullString
+	Amount         float64
+	Units          string
+	StandardAmount float64
+	StandardUnits  string
+	RecipeID       int64
 }
 
 func (q *Queries) CreateIngredient(ctx context.Context, arg CreateIngredientParams) (sql.Result, error) {
@@ -30,12 +34,16 @@ func (q *Queries) CreateIngredient(ctx context.Context, arg CreateIngredientPara
 		arg.UpdatedAt,
 		arg.Name,
 		arg.Description,
+		arg.Amount,
+		arg.Units,
+		arg.StandardAmount,
+		arg.StandardUnits,
 		arg.RecipeID,
 	)
 }
 
 const getIngredient = `-- name: GetIngredient :one
-SELECT id, created_at, updated_at, name, description, recipe_id FROM ingredients
+SELECT id, created_at, updated_at, name, description, recipe_id, amount, units, standard_amount, standard_units FROM ingredients
 WHERE id = ?
 `
 
@@ -49,12 +57,16 @@ func (q *Queries) GetIngredient(ctx context.Context, id int64) (Ingredient, erro
 		&i.Name,
 		&i.Description,
 		&i.RecipeID,
+		&i.Amount,
+		&i.Units,
+		&i.StandardAmount,
+		&i.StandardUnits,
 	)
 	return i, err
 }
 
 const getIngredientsForRecipe = `-- name: GetIngredientsForRecipe :many
-SELECT id, created_at, updated_at, name, description, recipe_id FROM ingredients
+SELECT id, created_at, updated_at, name, description, recipe_id, amount, units, standard_amount, standard_units FROM ingredients
 WHERE recipe_id = ?
 ORDER BY id
 `
@@ -75,6 +87,10 @@ func (q *Queries) GetIngredientsForRecipe(ctx context.Context, recipeID int64) (
 			&i.Name,
 			&i.Description,
 			&i.RecipeID,
+			&i.Amount,
+			&i.Units,
+			&i.StandardAmount,
+			&i.StandardUnits,
 		); err != nil {
 			return nil, err
 		}

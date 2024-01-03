@@ -18,12 +18,16 @@ type GroceryList struct {
 }
 
 type Ingredient struct {
-	ID          int64
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Name        string
-	Description sql.NullString
-	RecipeID    int64
+	ID             int64
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	Name           string
+	Description    sql.NullString
+	RecipeID       int64
+	Amount         float64
+	Units          string
+	StandardAmount float64
+	StandardUnits  string
 }
 
 type Recipe struct {

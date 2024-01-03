@@ -85,7 +85,7 @@ func (q *Queries) GetGroceryListsForUser(ctx context.Context, ownerID int64) ([]
 }
 
 const getIngredientsInGroceryList = `-- name: GetIngredientsInGroceryList :many
-SELECT i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id FROM ingredients i
+SELECT i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM ingredients i
 JOIN recipes r ON r.id = i.recipe_id
 JOIN recipe_instances ri ON r.id = ri.recipe_id
 WHERE ri.grocery_list_id = ?
@@ -107,6 +107,10 @@ func (q *Queries) GetIngredientsInGroceryList(ctx context.Context, groceryListID
 			&i.Name,
 			&i.Description,
 			&i.RecipeID,
+			&i.Amount,
+			&i.Units,
+			&i.StandardAmount,
+			&i.StandardUnits,
 		); err != nil {
 			return nil, err
 		}

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -128,19 +129,27 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
-		if ingredients, ok := s.Ingredients(); ok {
-			for _, ingredient := range ingredients {
-				now = time.Now()
-				_, err := c.DB.CreateIngredient(r.Context(), database.CreateIngredientParams{
-					CreatedAt:   now,
-					UpdatedAt:   now,
-					Name:        ingredient,
-					RecipeID:    id,
-					Description: sql.NullString{Valid: false},
-				})
+		if ings, ok := s.Ingredients(); ok {
+			if ingredients, err := c.IngredientParser.ParseIngredients(ings); err != nil {
+				log.Println("Could not parse ingredients from recipe: ", err)
+			} else {
+				for _, ingredient := range ingredients {
+					now = time.Now()
+					_, err := c.DB.CreateIngredient(r.Context(), database.CreateIngredientParams{
+						CreatedAt:      now,
+						UpdatedAt:      now,
+						Name:           ingredient.Name,
+						Amount:         ingredient.Measure.OriginalAmount,
+						Units:          ingredient.Measure.OriginalUnits,
+						StandardAmount: ingredient.Measure.StandardAmount,
+						StandardUnits:  ingredient.Measure.StandardUnits.String(),
+						RecipeID:       id,
+						Description:    sql.NullString{Valid: false},
+					})
 
-				if err != nil {
-					continue
+					if err != nil {
+						log.Println("Error adding ingredient to database: ", err)
+					}
 				}
 			}
 		}
