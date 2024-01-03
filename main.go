@@ -185,6 +185,13 @@ func stringPointerFromSqlNullString(s sql.NullString) *string {
 	return &s.String
 }
 
+func int64PointerFromSqlNullInt64(i sql.NullInt64) *int64 {
+	if !i.Valid {
+		return nil
+	}
+	return &i.Int64
+}
+
 func sqlNullStringFromOkString(s string, ok bool) sql.NullString {
 	return sql.NullString{Valid: ok, String: s}
 }

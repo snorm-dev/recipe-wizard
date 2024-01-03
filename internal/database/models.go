@@ -30,6 +30,15 @@ type Ingredient struct {
 	StandardUnits  string
 }
 
+type IngredientInstance struct {
+	ID               int64
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	GroceryListID    int64
+	RecipeInstanceID sql.NullInt64
+	IngredientID     sql.NullInt64
+}
+
 type Recipe struct {
 	ID          int64
 	CreatedAt   time.Time

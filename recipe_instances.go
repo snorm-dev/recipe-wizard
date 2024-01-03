@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,20 +13,26 @@ import (
 )
 
 type recipeInstanceResponse struct {
-	ID            int64     `json:"id"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-	GroceryListID int64     `json:"grocery_list_id"`
-	RecipeID      int64     `json:"recipe_id"`
+	ID                  int64                        `json:"id"`
+	CreatedAt           time.Time                    `json:"created_at"`
+	UpdatedAt           time.Time                    `json:"updated_at"`
+	GroceryListID       int64                        `json:"grocery_list_id"`
+	RecipeID            int64                        `json:"recipe_id"`
+	IngredientInstances []ingredientInstanceResponse `json:"ingredient_instances"`
 }
 
-func databaseRecipeInstanceToResponse(ri database.RecipeInstance) recipeInstanceResponse {
+func databaseRecipeInstanceToResponse(ri database.RecipeInstance, iis []database.IngredientInstance) recipeInstanceResponse {
+	instances := make([]ingredientInstanceResponse, len(iis))
+	for _, ii := range iis {
+		instances = append(instances, databaseIngredientInstanceToResponse(ii))
+	}
 	return recipeInstanceResponse{
-		ID:            ri.ID,
-		CreatedAt:     ri.CreatedAt,
-		UpdatedAt:     ri.UpdatedAt,
-		GroceryListID: ri.GroceryListID,
-		RecipeID:      ri.RecipeID,
+		ID:                  ri.ID,
+		CreatedAt:           ri.CreatedAt,
+		UpdatedAt:           ri.UpdatedAt,
+		GroceryListID:       ri.GroceryListID,
+		RecipeID:            ri.RecipeID,
+		IngredientInstances: instances,
 	}
 }
 
@@ -34,8 +41,6 @@ func (c *config) handlePostRecipeInGroceryList() http.HandlerFunc {
 	type request struct {
 		RecipeID int64 `json:"recipe_id"`
 	}
-
-	type response = recipeInstanceResponse
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		var user database.User
@@ -78,7 +83,7 @@ func (c *config) handlePostRecipeInGroceryList() http.HandlerFunc {
 
 		now := time.Now()
 
-		result, err := c.DB.AddRecipeToGroceryList(r.Context(), database.AddRecipeToGroceryListParams{
+		result, err := c.DB.CreateRecipeInstance(r.Context(), database.CreateRecipeInstanceParams{
 			CreatedAt:     now,
 			UpdatedAt:     now,
 			RecipeID:      reqBody.RecipeID,
@@ -103,7 +108,37 @@ func (c *config) handlePostRecipeInGroceryList() http.HandlerFunc {
 			return
 		}
 
-		var resBody response = databaseRecipeInstanceToResponse(recipeInstance)
+		ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), reqBody.RecipeID)
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		for _, ingredient := range ingredients {
+			now := time.Now()
+			_, err := c.DB.CreateIngredientInstance(r.Context(), database.CreateIngredientInstanceParams{
+				CreatedAt:        now,
+				UpdatedAt:        now,
+				IngredientID:     sql.NullInt64{Int64: ingredient.ID, Valid: true},
+				GroceryListID:    groceryList.ID,
+				RecipeInstanceID: sql.NullInt64{Int64: recipeInstance.ID, Valid: true},
+			})
+
+			if err != nil {
+				respondWithError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+		}
+
+		ingredientInstances, err := c.DB.GetIngredientInstancesForRecipeInstance(r.Context(), sql.NullInt64{Valid: true, Int64: recipeInstance.ID})
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		var resBody = databaseRecipeInstanceToResponse(recipeInstance, ingredientInstances)
 
 		respondWithJSON(w, http.StatusCreated, &resBody)
 	}
@@ -111,7 +146,7 @@ func (c *config) handlePostRecipeInGroceryList() http.HandlerFunc {
 
 func (c *config) handleGetRecipesInGroceryList() http.HandlerFunc {
 
-	type response = []recipeResponse
+	type response = []recipeInstanceResponse
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -144,25 +179,25 @@ func (c *config) handleGetRecipesInGroceryList() http.HandlerFunc {
 			return
 		}
 
-		recipes, err := c.DB.GetRecipesInGroceryList(r.Context(), groceryList.ID)
+		recipeInstances, err := c.DB.GetRecipeInstancesInGroceryList(r.Context(), groceryList.ID)
 
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		resBody := make(response, len(recipes))
+		var resBody response = make([]recipeInstanceResponse, len(recipeInstances))
 
-		for i, recipe := range recipes {
+		for i, recipe := range recipeInstances {
 
-			ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), recipe.ID)
+			ingredients, err := c.DB.GetIngredientInstancesForRecipeInstance(r.Context(), sql.NullInt64{Valid: true, Int64: recipe.ID})
 
 			if err != nil {
 				respondWithError(w, http.StatusInternalServerError, err.Error())
 				return
 			}
 
-			r := databaseRecipeToResponse(recipe, ingredients)
+			r := databaseRecipeInstanceToResponse(recipe, ingredients)
 			resBody[i] = r
 		}
 
