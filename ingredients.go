@@ -12,20 +12,34 @@ import (
 )
 
 type ingredientResponse struct {
-	ID          int64     `json:"id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Name        string    `json:"name"`
-	Description *string   `json:"description,omitempty"`
-	RecipeID    int64     `json:"recipe_id"`
+	ID          int64           `json:"id"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
+	Name        string          `json:"name"`
+	Measure     measureResponse `json:"measure"`
+	Description *string         `json:"description,omitempty"`
+	RecipeID    int64           `json:"recipe_id"`
+}
+
+type measureResponse struct {
+	OriginalAmount float64 `json:"amount"`
+	OriginalUnits  string  `json:"units"`
+	StandardAmount float64 `json:"standard_amount"`
+	StandardUnits  string  `json:"standard_units"`
 }
 
 func databaseIngredientToReponse(ingredient database.Ingredient) ingredientResponse {
 	return ingredientResponse{
-		ID:          ingredient.ID,
-		CreatedAt:   ingredient.CreatedAt,
-		UpdatedAt:   ingredient.UpdatedAt,
-		Name:        ingredient.Name,
+		ID:        ingredient.ID,
+		CreatedAt: ingredient.CreatedAt,
+		UpdatedAt: ingredient.UpdatedAt,
+		Name:      ingredient.Name,
+		Measure: measureResponse{
+			OriginalAmount: ingredient.Amount,
+			OriginalUnits:  ingredient.Units,
+			StandardAmount: ingredient.StandardAmount,
+			StandardUnits:  ingredient.StandardUnits,
+		},
 		Description: stringPointerFromSqlNullString(ingredient.Description),
 		RecipeID:    ingredient.RecipeID,
 	}

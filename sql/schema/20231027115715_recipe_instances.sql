@@ -11,5 +11,5 @@ CREATE TABLE recipe_instances (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE grocery_list_recipes;
+DROP TABLE recipe_instances;
 -- +goose StatementEnd
