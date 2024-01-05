@@ -29,9 +29,13 @@ type recipeResponse struct {
 }
 
 func databaseRecipeToResponse(recipe database.Recipe, ingredients []database.Ingredient) recipeResponse {
-	responseIngredients := make([]ingredientResponse, 0, len(ingredients))
-	for _, ingredient := range ingredients {
-		responseIngredients = append(responseIngredients, databaseIngredientToReponse(ingredient))
+	var responseIngredients []ingredientResponse
+
+	if ingredients != nil {
+		responseIngredients = make([]ingredientResponse, 0, len(ingredients))
+		for _, ingredient := range ingredients {
+			responseIngredients = append(responseIngredients, databaseIngredientToReponse(ingredient))
+		}
 	}
 
 	return recipeResponse{
@@ -55,12 +59,17 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		reqBody := request{}
-
 		err := json.NewDecoder(r.Body).Decode(&reqBody)
-
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		if !ok {
+			respondWithError(w, http.StatusInternalServerError, "Could not get user")
 			return
 		}
 
@@ -91,14 +100,6 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			Valid:  true,
 		}
 
-		var user database.User
-		if value := r.Context().Value(ContextUserKey); value != nil {
-			user = value.(database.User)
-		} else {
-			respondWithError(w, http.StatusInternalServerError, "Could not get user")
-			return
-		}
-
 		result, err := c.DB.CreateRecipe(r.Context(), database.CreateRecipeParams{
 			CreatedAt:   now,
 			UpdatedAt:   now,
@@ -110,20 +111,17 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 			TotalTime:   totalTime,
 			OwnerID:     user.ID,
 		})
-
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not create recipe in db: %v", err))
 			return
 		}
 
 		id, err := result.LastInsertId()
-
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not retrieve id: %v", err))
 		}
 
 		recipe, err := c.DB.GetRecipe(r.Context(), id)
-
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, fmt.Sprintf("Could not get recipe from db: %v", err))
 			return
@@ -146,7 +144,6 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 						RecipeID:       id,
 						Description:    sql.NullString{Valid: false},
 					})
-
 					if err != nil {
 						log.Println("Error adding ingredient to database: ", err)
 					}
@@ -155,7 +152,6 @@ func (c *config) handlePostRecipe() http.HandlerFunc {
 		}
 
 		ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), id)
-
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -172,23 +168,19 @@ func (c *config) handleGetRecipe() http.HandlerFunc {
 		idString := chi.URLParam(r, "recipe_id")
 
 		id, err := strconv.Atoi(idString)
-
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Id is not an integer")
 			return
 		}
 
 		recipe, err := c.DB.GetRecipe(r.Context(), int64(id))
-
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		var user database.User
-		if value := r.Context().Value(ContextUserKey); value != nil {
-			user = value.(database.User)
-		} else {
+		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Could not get user")
 			return
 		}
@@ -198,11 +190,14 @@ func (c *config) handleGetRecipe() http.HandlerFunc {
 			return
 		}
 
-		ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), recipe.ID)
+		var ingredients []database.Ingredient
+		if r.URL.Query().Has("return-ingredients") {
+			ingredients, err = c.DB.GetIngredientsForRecipe(r.Context(), recipe.ID)
 
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
+			if err != nil {
+				respondWithError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
 		}
 
 		resBody := databaseRecipeToResponse(recipe, ingredients)
@@ -216,16 +211,13 @@ func (c *config) handleGetRecipes() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var user database.User
-		if value := r.Context().Value(ContextUserKey); value != nil {
-			user = value.(database.User)
-		} else {
+		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Could not get user")
 			return
 		}
 
 		recipes, err := c.DB.GetRecipesForUser(r.Context(), user.ID)
-
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -235,11 +227,14 @@ func (c *config) handleGetRecipes() http.HandlerFunc {
 
 		for i, recipe := range recipes {
 
-			ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), recipe.ID)
+			var ingredients []database.Ingredient
+			if r.URL.Query().Has("return-ingredients") {
+				ingredients, err = c.DB.GetIngredientsForRecipe(r.Context(), recipe.ID)
 
-			if err != nil {
-				respondWithError(w, http.StatusInternalServerError, err.Error())
-				return
+				if err != nil {
+					respondWithError(w, http.StatusInternalServerError, err.Error())
+					return
+				}
 			}
 
 			r := databaseRecipeToResponse(recipe, ingredients)
