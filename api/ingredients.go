@@ -1,8 +1,6 @@
-package main
+package api
 
 import (
-	"database/sql"
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -17,7 +15,7 @@ type ingredientResponse struct {
 	UpdatedAt   time.Time       `json:"updated_at"`
 	Name        string          `json:"name"`
 	Measure     measureResponse `json:"measure"`
-	Description *string         `json:"description,omitempty"`
+	Description string          `json:"description,omitempty"`
 	RecipeID    int64           `json:"recipe_id"`
 }
 
@@ -40,52 +38,39 @@ func databaseIngredientToReponse(ingredient database.Ingredient) ingredientRespo
 			StandardAmount: ingredient.StandardAmount,
 			StandardUnits:  ingredient.StandardUnits,
 		},
-		Description: stringPointerFromSqlNullString(ingredient.Description),
+		Description: ingredient.Description.String,
 		RecipeID:    ingredient.RecipeID,
 	}
 }
 
-func (c *config) handleGetIngredients() http.HandlerFunc {
+func (c *Config) handleGetIngredients() http.HandlerFunc {
 	type response []ingredientResponse
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		var user database.User
 
-		if value := r.Context().Value(ContextUserKey); value != nil {
-			user = value.(database.User)
-		} else {
-			respondWithError(w, http.StatusInternalServerError, "Could not get user")
+		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		if !ok {
+			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
 		}
 
 		idString := chi.URLParam(r, "recipe_id")
 
-		recipeID, err := strconv.Atoi(idString)
-
+		recipeID, err := strconv.ParseInt(idString, 10, 64)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Recipe id is not an integer")
 			return
 		}
 
-		recipe, err := c.DB.GetRecipe(r.Context(), int64(recipeID))
-
-		if errors.Is(err, sql.ErrNoRows) {
-			respondWithError(w, http.StatusUnauthorized, "Recipe does not exist")
-			return
-		} else if err != nil {
-			respondWithError(w, http.StatusInternalServerError, "Could not get recipe from database")
-			return
-		}
-
-		if user.ID != recipe.OwnerID {
-			respondWithError(w, http.StatusForbidden, "User does not own recipe.")
-			return
-		}
-
-		ingredients, err := c.DB.GetIngredientsForRecipe(r.Context(), recipe.ID)
-
+		recipe, err := c.Domain.GetRecipe(r.Context(), user, recipeID)
 		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
+			respondWithDomainError(w, err)
+			return
+		}
+
+		ingredients, err := c.Domain.GetIngredientsForRecipe(r.Context(), user, recipe)
+		if err != nil {
+			respondWithDomainError(w, err)
 			return
 		}
 

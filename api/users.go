@@ -1,8 +1,7 @@
-package main
+package api
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,20 +11,20 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/snorman7384/recipe-wizard/internal/database"
+	"github.com/snorman7384/recipe-wizard/domain"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (c *config) handlePostUser() http.HandlerFunc {
+const maxJwtDuration = time.Hour * 24
 
-	maxJwtDuration := time.Hour * 24
+func (c *Config) handlePostUser() http.HandlerFunc {
 
 	type request struct {
-		Username         string  `json:"username"`
-		Password         string  `json:"password"`
-		FirstName        *string `json:"first_name"`
-		LastName         *string `json:"last_name"`
-		ExpiresInSeconds int     `json:"expires_in_seconds"`
+		Username         string `json:"username"`
+		Password         string `json:"password"`
+		FirstName        string `json:"first_name"`
+		LastName         string `json:"last_name"`
+		ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
 
 	type response struct {
@@ -33,8 +32,8 @@ func (c *config) handlePostUser() http.HandlerFunc {
 		CreatedAt time.Time `json:"created_at"`
 		UpdatedAt time.Time `json:"updated_at"`
 		Username  string    `json:"username"`
-		FirstName *string   `json:"first_name,omitempty"`
-		LastName  *string   `json:"last_name,omitempty"`
+		FirstName string    `json:"first_name,omitempty"`
+		LastName  string    `json:"last_name,omitempty"`
 		Token     string    `json:"token"`
 	}
 
@@ -48,9 +47,6 @@ func (c *config) handlePostUser() http.HandlerFunc {
 			return
 		}
 
-		firstName := sqlNullStringFromStringPointer(req.FirstName)
-		lastName := sqlNullStringFromStringPointer(req.LastName)
-
 		hashedPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 
 		if errors.Is(err, bcrypt.ErrPasswordTooLong) {
@@ -61,33 +57,14 @@ func (c *config) handlePostUser() http.HandlerFunc {
 			return
 		}
 
-		now := time.Now()
-
-		result, err := c.DB.CreateUser(r.Context(), database.CreateUserParams{
-			CreatedAt:      now,
-			UpdatedAt:      now,
+		user, err := c.Domain.CreateUser(r.Context(), domain.CreateUserParams{
 			Username:       req.Username,
 			HashedPassword: string(hashedPasswordBytes),
-			FirstName:      firstName,
-			LastName:       lastName,
+			FirstName:      req.FirstName,
+			LastName:       req.LastName,
 		})
-
 		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		id, err := result.LastInsertId()
-
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		dbUser, err := c.DB.GetUser(r.Context(), id)
-
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
+			respondWithDomainError(w, err)
 			return
 		}
 
@@ -103,7 +80,7 @@ func (c *config) handlePostUser() http.HandlerFunc {
 			Issuer:    "recipe-wizard",
 			IssuedAt:  issuedAt,
 			ExpiresAt: expiresAt,
-			Subject:   fmt.Sprint(id),
+			Subject:   fmt.Sprint(user.ID),
 		})
 
 		tokenString, err := token.SignedString(c.JwtSecret)
@@ -114,12 +91,12 @@ func (c *config) handlePostUser() http.HandlerFunc {
 		}
 
 		res := response{
-			ID:        dbUser.ID,
-			CreatedAt: dbUser.CreatedAt,
-			UpdatedAt: dbUser.UpdatedAt,
-			Username:  dbUser.Username,
-			FirstName: stringPointerFromSqlNullString(dbUser.FirstName),
-			LastName:  stringPointerFromSqlNullString(dbUser.LastName),
+			ID:        user.ID,
+			CreatedAt: user.CreatedAt,
+			UpdatedAt: user.UpdatedAt,
+			Username:  user.Username,
+			FirstName: user.FirstName.String,
+			LastName:  user.LastName.String,
 			Token:     tokenString,
 		}
 
@@ -127,7 +104,7 @@ func (c *config) handlePostUser() http.HandlerFunc {
 	}
 }
 
-func (c *config) handleLogin() http.HandlerFunc {
+func (c *Config) handleLogin() http.HandlerFunc {
 	type request struct {
 		Username         string `json:"username"`
 		Password         string `json:"password"`
@@ -142,16 +119,14 @@ func (c *config) handleLogin() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := request{}
-
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			respondWithError(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		user, err := c.DB.GetUserByUsername(r.Context(), req.Username)
-
+		user, err := c.Domain.GetUserByUsername(r.Context(), req.Username)
 		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
+			respondWithDomainError(w, err)
 			return
 		}
 
@@ -190,7 +165,7 @@ func (c *config) handleLogin() http.HandlerFunc {
 	}
 }
 
-func (c *config) middlewareExtractUser(next http.Handler) http.HandlerFunc {
+func (c *Config) middlewareExtractUser(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authString := r.Header.Get("Authorization")
 		if authString == "" {
@@ -211,33 +186,26 @@ func (c *config) middlewareExtractUser(next http.Handler) http.HandlerFunc {
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 			return []byte(c.JwtSecret), nil
 		})
-
 		if err != nil {
 			respondWithError(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
 		userIdString, err := token.Claims.GetSubject()
-
 		if err != nil {
 			respondWithError(w, http.StatusUnauthorized, "No user specified")
 			return
 		}
 
-		userId, err := strconv.Atoi(userIdString)
-
+		userId, err := strconv.ParseInt(userIdString, 10, 64)
 		if err != nil {
 			respondWithError(w, http.StatusUnauthorized, "Invalid user id")
 			return
 		}
 
-		user, err := c.DB.GetUser(r.Context(), int64(userId))
-
-		if errors.Is(err, sql.ErrNoRows) {
-			respondWithError(w, http.StatusUnauthorized, "User does not exist")
-			return
-		} else if err != nil {
-			respondWithError(w, http.StatusInternalServerError, "Could not get user from database")
+		user, err := c.Domain.GetUser(r.Context(), userId)
+		if err != nil {
+			respondWithDomainError(w, err)
 			return
 		}
 
