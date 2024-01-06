@@ -2,7 +2,9 @@ package ingparse
 
 import (
 	"fmt"
+	"log"
 	"strings"
+	"time"
 
 	"github.com/schollz/ingredients"
 )
@@ -36,9 +38,9 @@ type Measure struct {
 }
 
 type Ingredient struct {
-	Line        string  // original string
-	Name        string  // core item name
-	Description *string // secondary info about the item, non-grouping
+	Line        string // original string
+	Name        string // core item name
+	Description string // secondary info about the item, non-grouping
 	Measure     Measure
 }
 
@@ -50,6 +52,7 @@ type IngredientParser interface {
 type SchollzParser struct{}
 
 func (p SchollzParser) ParseIngredients(lines []string) ([]Ingredient, error) {
+	log.Println(time.Now(), "BEGIN SCHOLLZ")
 	ings, err := ingredients.ParseTextIngredients(strings.Join(lines, "\n"))
 
 	if err != nil {
@@ -72,7 +75,7 @@ func (p SchollzParser) ParseIngredientLine(line string) (Ingredient, error) {
 	}
 
 	if l := len(ings.Ingredients); l != 1 {
-		return Ingredient{}, fmt.Errorf("incorrect number of ingredients: %d", l)
+		return Ingredient{}, fmt.Errorf("incorrect number of ingredients in line \"%s\": %d", line, l)
 	}
 
 	ing := ings.Ingredients[0]
@@ -81,14 +84,10 @@ func (p SchollzParser) ParseIngredientLine(line string) (Ingredient, error) {
 }
 
 func (p SchollzParser) convertIngredient(ing ingredients.Ingredient) Ingredient {
-	var desc *string = nil
-	if ing.Comment != "" {
-		desc = &ing.Comment
-	}
 	return Ingredient{
 		Line:        ing.Line,
 		Name:        ing.Name,
-		Description: desc,
+		Description: ing.Comment,
 		Measure:     p.convertMeasure(ing),
 	}
 }
