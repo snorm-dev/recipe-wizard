@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/snorman7384/recipe-wizard/internal/database"
+	"github.com/snorman7384/recipe-wizard/domain"
 )
 
 type recipeResponse struct {
@@ -24,13 +24,13 @@ type recipeResponse struct {
 	Ingredients []ingredientResponse `json:"ingredients,omitempty"`
 }
 
-func databaseRecipeToResponse(recipe database.Recipe, ingredients []database.Ingredient) recipeResponse {
+func domainRecipeToResponse(recipe domain.Recipe, ingredients []domain.Ingredient) recipeResponse {
 	var responseIngredients []ingredientResponse
 
 	if ingredients != nil {
 		responseIngredients = make([]ingredientResponse, 0, len(ingredients))
 		for _, ingredient := range ingredients {
-			responseIngredients = append(responseIngredients, databaseIngredientToReponse(ingredient))
+			responseIngredients = append(responseIngredients, domainIngredientToReponse(ingredient))
 		}
 	}
 
@@ -39,11 +39,11 @@ func databaseRecipeToResponse(recipe database.Recipe, ingredients []database.Ing
 		CreatedAt:   recipe.CreatedAt,
 		UpdatedAt:   recipe.UpdatedAt,
 		Name:        recipe.Name,
-		Description: (recipe.Description.String),
-		Url:         (recipe.Url.String),
-		PrepTime:    (recipe.PrepTime.String),
-		CookTime:    (recipe.CookTime.String),
-		TotalTime:   (recipe.TotalTime.String),
+		Description: (recipe.Description),
+		Url:         (recipe.Url),
+		PrepTime:    (recipe.PrepTime),
+		CookTime:    (recipe.CookTime),
+		TotalTime:   (recipe.TotalTime),
 		OwnerId:     recipe.OwnerID,
 		Ingredients: responseIngredients,
 	}
@@ -63,7 +63,7 @@ func (c *Config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
 		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
@@ -80,7 +80,7 @@ func (c *Config) handlePostRecipe() http.HandlerFunc {
 			return
 		}
 
-		resBody := databaseRecipeToResponse(recipe, ingredients)
+		resBody := domainRecipeToResponse(recipe, ingredients)
 
 		respondWithJSON(w, http.StatusCreated, &resBody)
 	}
@@ -96,7 +96,7 @@ func (c *Config) handleGetRecipe() http.HandlerFunc {
 			return
 		}
 
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
 		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
@@ -108,7 +108,7 @@ func (c *Config) handleGetRecipe() http.HandlerFunc {
 			return
 		}
 
-		var ingredients []database.Ingredient
+		var ingredients []domain.Ingredient
 		if r.URL.Query().Has("return-ingredients") {
 			ingredients, err = c.Domain.GetIngredientsForRecipe(r.Context(), user, recipe)
 			if err != nil {
@@ -117,7 +117,7 @@ func (c *Config) handleGetRecipe() http.HandlerFunc {
 			}
 		}
 
-		resBody := databaseRecipeToResponse(recipe, ingredients)
+		resBody := domainRecipeToResponse(recipe, ingredients)
 
 		respondWithJSON(w, http.StatusOK, resBody)
 	}
@@ -128,7 +128,7 @@ func (c *Config) handleGetRecipes() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
 		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
@@ -144,7 +144,7 @@ func (c *Config) handleGetRecipes() http.HandlerFunc {
 
 		for i, recipe := range recipes {
 
-			var ingredients []database.Ingredient
+			var ingredients []domain.Ingredient
 			if r.URL.Query().Has("return-ingredients") {
 				ingredients, err = c.Domain.GetIngredientsForRecipe(r.Context(), user, recipe)
 				if err != nil {
@@ -153,7 +153,7 @@ func (c *Config) handleGetRecipes() http.HandlerFunc {
 				}
 			}
 
-			r := databaseRecipeToResponse(recipe, ingredients)
+			r := domainRecipeToResponse(recipe, ingredients)
 			resBody[i] = r
 		}
 

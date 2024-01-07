@@ -55,7 +55,7 @@ func (c *Config) Serve() {
 	v1.Post("/grocery-lists/{grocery_list_id}/recipes", c.middlewareExtractUser(c.handlePostRecipeInGroceryList()))
 	v1.Get("/grocery-lists/{grocery_list_id}/recipes", c.middlewareExtractUser(c.handleGetRecipesInGroceryList()))
 
-	// v1.Get("/grocery-lists/{grocery_list_id}/ingredients", c.middlewareExtractUser(c.handleGetIngredientsInGroceryList()))
+	v1.Get("/grocery-lists/{grocery_list_id}/ingredients", c.middlewareExtractUser(c.handleGetIngredientInstancesForGroceryList()))
 
 	v1.Post("/users", c.handlePostUser())
 	v1.Post("/login", c.handleLogin())
@@ -150,6 +150,7 @@ func respondWithDomainError(w http.ResponseWriter, err error) {
 	case domerr.Forbidden:
 		code = http.StatusForbidden
 	case domerr.Internal:
+		code = http.StatusInternalServerError
 	default:
 		code = http.StatusInternalServerError
 	}

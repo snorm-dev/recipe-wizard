@@ -6,7 +6,7 @@ CREATE TABLE ingredient_instances (
 	updated_at TIMESTAMP NOT NULL,
 	grocery_list_id BIGINT NOT NULL,
 	recipe_instance_id BIGINT,
-	ingredient_id BIGINT
+	ingredient_id BIGINT NOT NULL
 );
 -- +goose StatementEnd
 

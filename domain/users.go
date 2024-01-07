@@ -10,6 +10,18 @@ import (
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
 
+func databaseToDomainUser(user database.User) User {
+	return User{
+		ID:             user.ID,
+		CreatedAt:      user.CreatedAt,
+		UpdatedAt:      user.UpdatedAt,
+		Username:       user.Username,
+		HashedPassword: user.HashedPassword,
+		FirstName:      user.FirstName.String,
+		LastName:       user.LastName.String,
+	}
+}
+
 type CreateUserParams struct {
 	Username       string
 	HashedPassword string
@@ -17,11 +29,11 @@ type CreateUserParams struct {
 	LastName       string
 }
 
-func (c *Config) CreateUser(ctx context.Context, params CreateUserParams) (database.User, error) {
+func (c *Config) CreateUser(ctx context.Context, params CreateUserParams) (User, error) {
 
 	tx, err := c.DB.Begin()
 	if err != nil {
-		return database.User{}, err
+		return User{}, err
 	}
 	defer tx.Rollback()
 
@@ -41,42 +53,42 @@ func (c *Config) CreateUser(ctx context.Context, params CreateUserParams) (datab
 	})
 
 	if err != nil {
-		return database.User{}, err
+		return User{}, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return database.User{}, err
+		return User{}, err
 	}
 
 	user, err := qtx.GetUser(ctx, id)
 	if err != nil {
-		return database.User{}, err
+		return User{}, err
 	}
 
-	return user, tx.Commit()
+	return databaseToDomainUser(user), tx.Commit()
 }
 
-func (c *Config) GetUser(ctx context.Context, id int64) (database.User, error) {
+func (c *Config) GetUser(ctx context.Context, id int64) (User, error) {
 
 	user, err := c.Querier().GetUser(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return database.User{}, domerr.ErrUserNotFound
+		return User{}, domerr.ErrUserNotFound
 	} else if err != nil {
-		return database.User{}, err
+		return User{}, err
 	}
 
-	return user, nil
+	return databaseToDomainUser(user), nil
 }
 
-func (c *Config) GetUserByUsername(ctx context.Context, username string) (database.User, error) {
+func (c *Config) GetUserByUsername(ctx context.Context, username string) (User, error) {
 
 	user, err := c.Querier().GetUserByUsername(ctx, username)
 	if errors.Is(err, sql.ErrNoRows) {
-		return database.User{}, domerr.ErrUserNotFound
+		return User{}, domerr.ErrUserNotFound
 	} else if err != nil {
-		return database.User{}, err
+		return User{}, err
 	}
 
-	return user, nil
+	return databaseToDomainUser(user), nil
 }

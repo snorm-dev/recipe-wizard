@@ -30,6 +30,19 @@ func (u StandardUnit) String() string {
 	return "<error>"
 }
 
+func StandardUnitFromString(s string) StandardUnit {
+	if s == "fl. oz." {
+		return FluidOunce
+	}
+	if s == "oz" {
+		return Ounce
+	}
+	if s == "whole" {
+		return Each
+	}
+	return -1 // error "default case"
+}
+
 type Measure struct {
 	OriginalAmount float64
 	OriginalUnits  string

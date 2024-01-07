@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/snorman7384/recipe-wizard/internal/database"
+	"github.com/snorman7384/recipe-wizard/domain"
 )
 
 type ingredientResponse struct {
@@ -26,7 +26,7 @@ type measureResponse struct {
 	StandardUnits  string  `json:"standard_units"`
 }
 
-func databaseIngredientToReponse(ingredient database.Ingredient) ingredientResponse {
+func domainIngredientToReponse(ingredient domain.Ingredient) ingredientResponse {
 	return ingredientResponse{
 		ID:        ingredient.ID,
 		CreatedAt: ingredient.CreatedAt,
@@ -36,9 +36,9 @@ func databaseIngredientToReponse(ingredient database.Ingredient) ingredientRespo
 			OriginalAmount: ingredient.Amount,
 			OriginalUnits:  ingredient.Units,
 			StandardAmount: ingredient.StandardAmount,
-			StandardUnits:  ingredient.StandardUnits,
+			StandardUnits:  ingredient.StandardUnits.String(),
 		},
-		Description: ingredient.Description.String,
+		Description: ingredient.Description,
 		RecipeID:    ingredient.RecipeID,
 	}
 }
@@ -48,7 +48,7 @@ func (c *Config) handleGetIngredients() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
 		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
@@ -77,7 +77,7 @@ func (c *Config) handleGetIngredients() http.HandlerFunc {
 		resBody := make(response, len(ingredients))
 
 		for i, dbIngredient := range ingredients {
-			ingredient := databaseIngredientToReponse(dbIngredient)
+			ingredient := domainIngredientToReponse(dbIngredient)
 			resBody[i] = ingredient
 		}
 

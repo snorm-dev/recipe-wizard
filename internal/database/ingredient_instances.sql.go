@@ -19,7 +19,7 @@ VALUES (?, ?, ?, ?, ?)
 type CreateIngredientInstanceParams struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
-	IngredientID     sql.NullInt64
+	IngredientID     int64
 	GroceryListID    int64
 	RecipeInstanceID sql.NullInt64
 }
@@ -32,6 +32,143 @@ func (q *Queries) CreateIngredientInstance(ctx context.Context, arg CreateIngred
 		arg.GroceryListID,
 		arg.RecipeInstanceID,
 	)
+}
+
+const getExtendedIngredientInstance = `-- name: GetExtendedIngredientInstance :one
+SELECT ii.id, ii.created_at, ii.updated_at, ii.grocery_list_id, ii.recipe_instance_id, ii.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM ingredient_instances ii
+JOIN ingredients i ON ii.ingredient_id = i.id
+WHERE ii.id = ?
+`
+
+type GetExtendedIngredientInstanceRow struct {
+	IngredientInstance IngredientInstance
+	Ingredient         Ingredient
+}
+
+func (q *Queries) GetExtendedIngredientInstance(ctx context.Context, id int64) (GetExtendedIngredientInstanceRow, error) {
+	row := q.db.QueryRowContext(ctx, getExtendedIngredientInstance, id)
+	var i GetExtendedIngredientInstanceRow
+	err := row.Scan(
+		&i.IngredientInstance.ID,
+		&i.IngredientInstance.CreatedAt,
+		&i.IngredientInstance.UpdatedAt,
+		&i.IngredientInstance.GroceryListID,
+		&i.IngredientInstance.RecipeInstanceID,
+		&i.IngredientInstance.IngredientID,
+		&i.Ingredient.ID,
+		&i.Ingredient.CreatedAt,
+		&i.Ingredient.UpdatedAt,
+		&i.Ingredient.Name,
+		&i.Ingredient.Description,
+		&i.Ingredient.RecipeID,
+		&i.Ingredient.Amount,
+		&i.Ingredient.Units,
+		&i.Ingredient.StandardAmount,
+		&i.Ingredient.StandardUnits,
+	)
+	return i, err
+}
+
+const getExtendedIngredientInstancesForGroceryList = `-- name: GetExtendedIngredientInstancesForGroceryList :many
+SELECT ii.id, ii.created_at, ii.updated_at, ii.grocery_list_id, ii.recipe_instance_id, ii.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM ingredient_instances ii
+JOIN ingredients i ON ii.ingredient_id = i.id
+WHERE ii.grocery_list_id = ?
+`
+
+type GetExtendedIngredientInstancesForGroceryListRow struct {
+	IngredientInstance IngredientInstance
+	Ingredient         Ingredient
+}
+
+func (q *Queries) GetExtendedIngredientInstancesForGroceryList(ctx context.Context, groceryListID int64) ([]GetExtendedIngredientInstancesForGroceryListRow, error) {
+	rows, err := q.db.QueryContext(ctx, getExtendedIngredientInstancesForGroceryList, groceryListID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetExtendedIngredientInstancesForGroceryListRow
+	for rows.Next() {
+		var i GetExtendedIngredientInstancesForGroceryListRow
+		if err := rows.Scan(
+			&i.IngredientInstance.ID,
+			&i.IngredientInstance.CreatedAt,
+			&i.IngredientInstance.UpdatedAt,
+			&i.IngredientInstance.GroceryListID,
+			&i.IngredientInstance.RecipeInstanceID,
+			&i.IngredientInstance.IngredientID,
+			&i.Ingredient.ID,
+			&i.Ingredient.CreatedAt,
+			&i.Ingredient.UpdatedAt,
+			&i.Ingredient.Name,
+			&i.Ingredient.Description,
+			&i.Ingredient.RecipeID,
+			&i.Ingredient.Amount,
+			&i.Ingredient.Units,
+			&i.Ingredient.StandardAmount,
+			&i.Ingredient.StandardUnits,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getExtendedIngredientInstancesForRecipeInstance = `-- name: GetExtendedIngredientInstancesForRecipeInstance :many
+SELECT ii.id, ii.created_at, ii.updated_at, ii.grocery_list_id, ii.recipe_instance_id, ii.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM ingredient_instances ii
+JOIN ingredients i ON ii.ingredient_id = i.id
+WHERE ii.recipe_instance_id = ?
+`
+
+type GetExtendedIngredientInstancesForRecipeInstanceRow struct {
+	IngredientInstance IngredientInstance
+	Ingredient         Ingredient
+}
+
+func (q *Queries) GetExtendedIngredientInstancesForRecipeInstance(ctx context.Context, recipeInstanceID sql.NullInt64) ([]GetExtendedIngredientInstancesForRecipeInstanceRow, error) {
+	rows, err := q.db.QueryContext(ctx, getExtendedIngredientInstancesForRecipeInstance, recipeInstanceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetExtendedIngredientInstancesForRecipeInstanceRow
+	for rows.Next() {
+		var i GetExtendedIngredientInstancesForRecipeInstanceRow
+		if err := rows.Scan(
+			&i.IngredientInstance.ID,
+			&i.IngredientInstance.CreatedAt,
+			&i.IngredientInstance.UpdatedAt,
+			&i.IngredientInstance.GroceryListID,
+			&i.IngredientInstance.RecipeInstanceID,
+			&i.IngredientInstance.IngredientID,
+			&i.Ingredient.ID,
+			&i.Ingredient.CreatedAt,
+			&i.Ingredient.UpdatedAt,
+			&i.Ingredient.Name,
+			&i.Ingredient.Description,
+			&i.Ingredient.RecipeID,
+			&i.Ingredient.Amount,
+			&i.Ingredient.Units,
+			&i.Ingredient.StandardAmount,
+			&i.Ingredient.StandardUnits,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getIngredientInstance = `-- name: GetIngredientInstance :one
@@ -51,4 +188,74 @@ func (q *Queries) GetIngredientInstance(ctx context.Context, id int64) (Ingredie
 		&i.IngredientID,
 	)
 	return i, err
+}
+
+const getIngredientInstancesForGroceryList = `-- name: GetIngredientInstancesForGroceryList :many
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM ingredient_instances ii 
+WHERE ii.grocery_list_id = ?
+`
+
+func (q *Queries) GetIngredientInstancesForGroceryList(ctx context.Context, groceryListID int64) ([]IngredientInstance, error) {
+	rows, err := q.db.QueryContext(ctx, getIngredientInstancesForGroceryList, groceryListID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngredientInstance
+	for rows.Next() {
+		var i IngredientInstance
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.GroceryListID,
+			&i.RecipeInstanceID,
+			&i.IngredientID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getIngredientInstancesForRecipeInstance = `-- name: GetIngredientInstancesForRecipeInstance :many
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM ingredient_instances ii 
+WHERE ii.recipe_instance_id = ?
+`
+
+func (q *Queries) GetIngredientInstancesForRecipeInstance(ctx context.Context, recipeInstanceID sql.NullInt64) ([]IngredientInstance, error) {
+	rows, err := q.db.QueryContext(ctx, getIngredientInstancesForRecipeInstance, recipeInstanceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngredientInstance
+	for rows.Next() {
+		var i IngredientInstance
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.GroceryListID,
+			&i.RecipeInstanceID,
+			&i.IngredientID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

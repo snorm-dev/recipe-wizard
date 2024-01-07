@@ -10,11 +10,21 @@ import (
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
 
-func (c *Config) CreateGroceryList(ctx context.Context, user database.User, name string) (database.GroceryList, error) {
+func databaseToDomainGroceryList(dbGroceryList database.GroceryList) GroceryList {
+	return GroceryList{
+		ID:        dbGroceryList.ID,
+		CreatedAt: dbGroceryList.CreatedAt,
+		UpdatedAt: dbGroceryList.UpdatedAt,
+		Name:      dbGroceryList.Name,
+		OwnerID:   dbGroceryList.ID,
+	}
+}
+
+func (c *Config) CreateGroceryList(ctx context.Context, user User, name string) (GroceryList, error) {
 
 	tx, err := c.DB.Begin()
 	if err != nil {
-		return database.GroceryList{}, err
+		return GroceryList{}, err
 	}
 	defer tx.Rollback()
 
@@ -29,44 +39,49 @@ func (c *Config) CreateGroceryList(ctx context.Context, user database.User, name
 		OwnerID:   user.ID,
 	})
 	if err != nil {
-		return database.GroceryList{}, err
+		return GroceryList{}, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return database.GroceryList{}, err
+		return GroceryList{}, err
 	}
 
 	groceryList, err := qtx.GetGroceryList(ctx, id)
 	if err != nil {
-		return database.GroceryList{}, err
+		return GroceryList{}, err
 	}
 
-	return groceryList, tx.Commit()
+	return databaseToDomainGroceryList(groceryList), tx.Commit()
 }
 
-func (c *Config) GetGroceryList(ctx context.Context, user database.User, id int64) (database.GroceryList, error) {
+func (c *Config) GetGroceryList(ctx context.Context, user User, id int64) (GroceryList, error) {
 
-	groceryList, err := c.Querier().GetGroceryList(ctx, int64(id))
+	groceryList, err := c.Querier().GetGroceryList(ctx, id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return database.GroceryList{}, domerr.ErrNotFound
+		return GroceryList{}, domerr.ErrNotFound
 	}
 	if err != nil {
-		return database.GroceryList{}, err
+		return GroceryList{}, err
 	}
 
 	if user.ID != groceryList.OwnerID {
-		return database.GroceryList{}, domerr.ErrForbidden
+		return GroceryList{}, domerr.ErrForbidden
 	}
 
-	return groceryList, nil
+	return databaseToDomainGroceryList(groceryList), nil
 }
 
-func (c *Config) GetGroceryListsForUser(ctx context.Context, user database.User) ([]database.GroceryList, error) {
+func (c *Config) GetGroceryListsForUser(ctx context.Context, user User) ([]GroceryList, error) {
 	groceryLists, err := c.Querier().GetGroceryListsForUser(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return groceryLists, nil
+	domainList := make([]GroceryList, len(groceryLists))
+	for i, groceryList := range groceryLists {
+		domainList[i] = databaseToDomainGroceryList(groceryList)
+	}
+
+	return domainList, nil
 }

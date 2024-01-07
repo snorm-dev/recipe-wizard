@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/snorman7384/recipe-wizard/internal/database"
+	"github.com/snorman7384/recipe-wizard/domain"
 )
 
 type groceryListResponse struct {
@@ -18,7 +18,7 @@ type groceryListResponse struct {
 	OwnerID   int64     `json:"owner_id"`
 }
 
-func databaseGroceryListToResponse(gl database.GroceryList) groceryListResponse {
+func domainGroceryListToResponse(gl domain.GroceryList) groceryListResponse {
 	return groceryListResponse{
 		ID:        gl.ID,
 		CreatedAt: gl.CreatedAt,
@@ -42,7 +42,7 @@ func (c *Config) handlePostGroceryList() http.HandlerFunc {
 			return
 		}
 
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
 		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
@@ -54,7 +54,9 @@ func (c *Config) handlePostGroceryList() http.HandlerFunc {
 			return
 		}
 
-		respondWithJSON(w, http.StatusCreated, &groceryList)
+		resBody := domainGroceryListToResponse(groceryList)
+
+		respondWithJSON(w, http.StatusOK, resBody)
 	}
 }
 
@@ -68,7 +70,7 @@ func (c *Config) handleGetGroceryList() http.HandlerFunc {
 			return
 		}
 
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
 		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
@@ -80,7 +82,7 @@ func (c *Config) handleGetGroceryList() http.HandlerFunc {
 			return
 		}
 
-		resBody := databaseGroceryListToResponse(groceryList)
+		resBody := domainGroceryListToResponse(groceryList)
 
 		respondWithJSON(w, http.StatusOK, resBody)
 	}
@@ -91,7 +93,7 @@ func (c *Config) handleGetGroceryLists() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
 		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
@@ -106,59 +108,10 @@ func (c *Config) handleGetGroceryLists() http.HandlerFunc {
 		resBody := make(response, len(groceryLists))
 
 		for i, dbGroceryList := range groceryLists {
-			r := databaseGroceryListToResponse(dbGroceryList)
+			r := domainGroceryListToResponse(dbGroceryList)
 			resBody[i] = r
 		}
 
 		respondWithJSON(w, http.StatusOK, resBody)
 	}
 }
-
-/*func (c *Config) handleGetIngredientsInGroceryList() http.HandlerFunc {
-	type response []ingredientResponse
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
-		if !ok {
-			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
-			return
-		}
-
-		idString := chi.URLParam(r, "grocery_list_id")
-
-		glID, err := strconv.Atoi(idString)
-
-		if err != nil {
-			respondWithError(w, http.StatusBadRequest, "Id is not an integer")
-			return
-		}
-
-		groceryList, err := c.DB.GetGroceryList(r.Context(), int64(glID))
-
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		if user.ID != groceryList.OwnerID {
-			respondWithError(w, http.StatusForbidden, "User does not own grocery list.")
-			return
-		}
-
-		ingredients, err := c.DB.GetIngredientsInGroceryList(r.Context(), groceryList.ID)
-
-		if err != nil {
-			respondWithError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
-
-		resBody := make(response, len(ingredients))
-
-		for i, ingredient := range ingredients {
-			resIngredient := databaseIngredientToReponse(ingredient)
-			resBody[i] = resIngredient
-		}
-
-		respondWithJSON(w, http.StatusOK, resBody)
-	}
-}*/

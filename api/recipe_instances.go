@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/snorman7384/recipe-wizard/internal/database"
+	"github.com/snorman7384/recipe-wizard/domain"
 )
 
 type recipeInstanceResponse struct {
@@ -19,17 +19,17 @@ type recipeInstanceResponse struct {
 	IngredientInstances []ingredientInstanceResponse `json:"ingredient_instances"`
 }
 
-func databaseRecipeInstanceToResponse(ri database.RecipeInstance, iis []database.IngredientInstance) recipeInstanceResponse {
+func domainRecipeInstanceToResponse(ri domain.RecipeInstance, iis []domain.IngredientInstance) recipeInstanceResponse {
 	instances := make([]ingredientInstanceResponse, len(iis))
 	for idx, ii := range iis {
-		instances[idx] = databaseIngredientInstanceToResponse(ii)
+		instances[idx] = domainIngredientInstanceToResponse(ii)
 	}
 	return recipeInstanceResponse{
 		ID:                  ri.ID,
 		CreatedAt:           ri.CreatedAt,
 		UpdatedAt:           ri.UpdatedAt,
 		GroceryListID:       ri.GroceryListID,
-		RecipeID:            ri.RecipeID,
+		RecipeID:            ri.Recipe.ID,
 		IngredientInstances: instances,
 	}
 }
@@ -41,7 +41,7 @@ func (c *Config) handlePostRecipeInGroceryList() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
 		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
@@ -81,7 +81,7 @@ func (c *Config) handlePostRecipeInGroceryList() http.HandlerFunc {
 			return
 		}
 
-		var resBody = databaseRecipeInstanceToResponse(recipeInstance, ingredientInstances)
+		var resBody = domainRecipeInstanceToResponse(recipeInstance, ingredientInstances)
 
 		respondWithJSON(w, http.StatusCreated, &resBody)
 	}
@@ -93,7 +93,7 @@ func (c *Config) handleGetRecipesInGroceryList() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		user, ok := r.Context().Value(ContextUserKey).(database.User)
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
 		if !ok {
 			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
 			return
@@ -129,7 +129,7 @@ func (c *Config) handleGetRecipesInGroceryList() http.HandlerFunc {
 				return
 			}
 
-			r := databaseRecipeInstanceToResponse(recipeInstance, ingredientInstances)
+			r := domainRecipeInstanceToResponse(recipeInstance, ingredientInstances)
 			resBody[i] = r
 		}
 
