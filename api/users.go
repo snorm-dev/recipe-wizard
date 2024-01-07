@@ -95,8 +95,8 @@ func (c *Config) handlePostUser() http.HandlerFunc {
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
 			Username:  user.Username,
-			FirstName: user.FirstName.String,
-			LastName:  user.LastName.String,
+			FirstName: user.FirstName,
+			LastName:  user.LastName,
 			Token:     tokenString,
 		}
 

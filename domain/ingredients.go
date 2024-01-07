@@ -4,10 +4,26 @@ import (
 	"context"
 
 	"github.com/snorman7384/recipe-wizard/domerr"
+	"github.com/snorman7384/recipe-wizard/ingparse"
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
 
-func (c *Config) GetIngredientsForRecipe(ctx context.Context, user database.User, recipe database.Recipe) ([]database.Ingredient, error) {
+func databaseToDomainIngredient(ingredient database.Ingredient) Ingredient {
+	return Ingredient{
+		ID:             ingredient.ID,
+		CreatedAt:      ingredient.CreatedAt,
+		UpdatedAt:      ingredient.UpdatedAt,
+		Name:           ingredient.Name,
+		Description:    ingredient.Description.String,
+		Units:          ingredient.Units,
+		Amount:         ingredient.Amount,
+		StandardUnits:  ingparse.StandardUnitFromString(ingredient.StandardUnits),
+		StandardAmount: ingredient.StandardAmount,
+		RecipeID:       ingredient.RecipeID,
+	}
+}
+
+func (c *Config) GetIngredientsForRecipe(ctx context.Context, user User, recipe Recipe) ([]Ingredient, error) {
 	if user.ID != recipe.OwnerID {
 		return nil, domerr.ErrForbidden
 	}
@@ -17,5 +33,11 @@ func (c *Config) GetIngredientsForRecipe(ctx context.Context, user database.User
 		return nil, err
 	}
 
-	return ingredients, nil
+	domainList := make([]Ingredient, len(ingredients))
+
+	for i, ingredient := range ingredients {
+		domainList[i] = databaseToDomainIngredient(ingredient)
+	}
+
+	return domainList, nil
 }

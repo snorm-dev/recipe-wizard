@@ -13,13 +13,28 @@ import (
 	"github.com/snorman7384/recipe-wizard/internal/misc"
 )
 
-func (c *Config) CreateRecipeFromUrl(ctx context.Context, user database.User, url string) (database.Recipe, error) {
+func databaseToDomainRecipe(recipe database.Recipe) Recipe {
+	return Recipe{
+		ID:          recipe.ID,
+		CreatedAt:   recipe.CreatedAt,
+		UpdatedAt:   recipe.UpdatedAt,
+		Name:        recipe.Name,
+		Description: recipe.Description.String,
+		Url:         recipe.Url.String,
+		PrepTime:    recipe.PrepTime.String,
+		CookTime:    recipe.CookTime.String,
+		TotalTime:   recipe.TotalTime.String,
+		OwnerID:     recipe.OwnerID,
+	}
+}
+
+func (c *Config) CreateRecipeFromUrl(ctx context.Context, user User, url string) (Recipe, error) {
 
 	// get recipe data
 	s, err := recipe.ScrapeURL(url)
 	if err != nil {
 		// respondWithError(w, http.StatusBadRequest, fmt.Sprintf("Could not parse recipe from url: %v", err))
-		return database.Recipe{}, domerr.ErrRecipeScraperFailure
+		return Recipe{}, domerr.ErrRecipeScraperFailure
 	}
 
 	name, ok := s.Name()
@@ -41,7 +56,7 @@ func (c *Config) CreateRecipeFromUrl(ctx context.Context, user database.User, ur
 
 	tx, err := c.DB.Begin()
 	if err != nil {
-		return database.Recipe{}, err
+		return Recipe{}, err
 	}
 	defer tx.Rollback()
 
@@ -59,23 +74,23 @@ func (c *Config) CreateRecipeFromUrl(ctx context.Context, user database.User, ur
 		OwnerID:     user.ID,
 	})
 	if err != nil {
-		return database.Recipe{}, err
+		return Recipe{}, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return database.Recipe{}, err
+		return Recipe{}, err
 	}
 
 	recipe, err := qtx.GetRecipe(ctx, id)
 	if err != nil {
-		return database.Recipe{}, err
+		return Recipe{}, err
 	}
 
 	if ings, ok := s.Ingredients(); ok {
 		ingredients, err := c.IngredientParser.ParseIngredients(ings)
 		if err != nil {
-			return database.Recipe{}, err
+			return Recipe{}, err
 		}
 		var wg sync.WaitGroup
 		ch := make(chan error, len(ingredients))
@@ -108,36 +123,42 @@ func (c *Config) CreateRecipeFromUrl(ctx context.Context, user database.User, ur
 		wg.Wait()
 		select {
 		case err := <-ch:
-			return database.Recipe{}, err
+			return Recipe{}, err
 		default:
 		}
 	}
 
-	return recipe, tx.Commit()
+	return databaseToDomainRecipe(recipe), tx.Commit()
 }
 
-func (c *Config) GetRecipe(ctx context.Context, user database.User, id int64) (database.Recipe, error) {
+func (c *Config) GetRecipe(ctx context.Context, user User, id int64) (Recipe, error) {
 
 	recipe, err := c.Querier().GetRecipe(ctx, int64(id))
 	if errors.Is(err, sql.ErrNoRows) {
-		return database.Recipe{}, domerr.ErrNotFound
+		return Recipe{}, domerr.ErrNotFound
 	}
 	if err != nil {
-		return database.Recipe{}, err
+		return Recipe{}, err
 	}
 
 	if user.ID != recipe.OwnerID {
-		return database.Recipe{}, domerr.ErrForbidden
+		return Recipe{}, domerr.ErrForbidden
 	}
 
-	return recipe, nil
+	return databaseToDomainRecipe(recipe), nil
 }
 
-func (c *Config) GetRecipesForUser(ctx context.Context, user database.User) ([]database.Recipe, error) {
+func (c *Config) GetRecipesForUser(ctx context.Context, user User) ([]Recipe, error) {
 	recipes, err := c.Querier().GetRecipesForUser(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return recipes, nil
+	domainList := make([]Recipe, len(recipes))
+
+	for i, recipe := range recipes {
+		domainList[i] = databaseToDomainRecipe(recipe)
+	}
+
+	return domainList, nil
 }

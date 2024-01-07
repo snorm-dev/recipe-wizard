@@ -10,6 +10,12 @@ WHERE id = ?;
 SELECT * FROM recipe_instances ri 
 WHERE ri.grocery_list_id = ?;
 
--- name: GetIngredientInstancesForRecipeInstance :many
-SELECT * FROM ingredient_instances ii 
-WHERE ii.recipe_instance_id = ?;
+-- name: GetExtendedRecipeInstance :one
+SELECT sqlc.embed(ri), sqlc.embed(r) from recipe_instances ri 
+JOIN recipes r ON ri.recipe_id = r.id
+WHERE ri.id = ?;
+
+-- name: GetExtendedRecipeInstancesInGroceryList :many
+SELECT sqlc.embed(ri), sqlc.embed(r) from recipe_instances ri 
+JOIN recipes r ON ri.recipe_id = r.id
+WHERE ri.grocery_list_id = ?;

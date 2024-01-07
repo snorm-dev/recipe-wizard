@@ -8,10 +8,20 @@ import (
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
 
-func (c *Config) CreateRecipeInstance(ctx context.Context, user database.User, groceryList database.GroceryList, recipeID int64) (database.RecipeInstance, error) {
+func databaseToDomainRecipeInstance(ri database.RecipeInstance, recipe Recipe) RecipeInstance {
+	return RecipeInstance{
+		ID:            ri.ID,
+		CreatedAt:     ri.CreatedAt,
+		UpdatedAt:     ri.UpdatedAt,
+		GroceryListID: ri.GroceryListID,
+		Recipe:        recipe,
+	}
+}
+
+func (c *Config) CreateRecipeInstance(ctx context.Context, user User, groceryList GroceryList, recipeID int64) (RecipeInstance, error) {
 	tx, err := c.DB.Begin()
 	if err != nil {
-		return database.RecipeInstance{}, err
+		return RecipeInstance{}, err
 	}
 	defer tx.Rollback()
 
@@ -26,22 +36,22 @@ func (c *Config) CreateRecipeInstance(ctx context.Context, user database.User, g
 		GroceryListID: groceryList.ID,
 	})
 	if err != nil {
-		return database.RecipeInstance{}, nil
+		return RecipeInstance{}, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return database.RecipeInstance{}, nil
+		return RecipeInstance{}, err
 	}
 
-	recipeInstance, err := qtx.GetRecipeInstance(ctx, id)
+	row, err := qtx.GetExtendedRecipeInstance(ctx, id)
 	if err != nil {
-		return database.RecipeInstance{}, nil
+		return RecipeInstance{}, err
 	}
 
 	ingredients, err := qtx.GetIngredientsForRecipe(ctx, recipeID)
 	if err != nil {
-		return database.RecipeInstance{}, nil
+		return RecipeInstance{}, err
 	}
 
 	for _, ingredient := range ingredients {
@@ -51,23 +61,29 @@ func (c *Config) CreateRecipeInstance(ctx context.Context, user database.User, g
 		_, err := qtx.CreateIngredientInstance(ctx, database.CreateIngredientInstanceParams{
 			CreatedAt:        now,
 			UpdatedAt:        now,
-			IngredientID:     sql.NullInt64{Int64: ingredient.ID, Valid: true},
+			IngredientID:     ingredient.ID,
 			GroceryListID:    groceryList.ID,
-			RecipeInstanceID: sql.NullInt64{Int64: recipeInstance.ID, Valid: true},
+			RecipeInstanceID: sql.NullInt64{Int64: row.RecipeInstance.ID, Valid: true},
 		})
 		if err != nil {
-			return database.RecipeInstance{}, nil
+			return RecipeInstance{}, err
 		}
 	}
 
-	return recipeInstance, tx.Commit()
+	return databaseToDomainRecipeInstance(row.RecipeInstance, databaseToDomainRecipe(row.Recipe)), tx.Commit()
 }
 
-func (c *Config) GetRecipeInstancesInGroceryList(ctx context.Context, groceryList database.GroceryList) ([]database.RecipeInstance, error) {
+func (c *Config) GetRecipeInstancesInGroceryList(ctx context.Context, groceryList GroceryList) ([]RecipeInstance, error) {
 
-	recipeInstances, err := c.Querier().GetRecipeInstancesInGroceryList(ctx, groceryList.ID)
+	rows, err := c.Querier().GetExtendedRecipeInstancesInGroceryList(ctx, groceryList.ID)
 	if err != nil {
 		return nil, err
+	}
+
+	recipeInstances := make([]RecipeInstance, len(rows))
+
+	for i, row := range rows {
+		recipeInstances[i] = databaseToDomainRecipeInstance(row.RecipeInstance, databaseToDomainRecipe(row.Recipe))
 	}
 
 	return recipeInstances, nil
