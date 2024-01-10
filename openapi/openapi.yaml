@@ -13,7 +13,7 @@ servers:
 paths:
   "/ping":
     get:
-      summary: Check the server is responding to requests
+      summary: GET /ping: Check the server is responding to requests
       operationId: ping
       responses:
         '200':
