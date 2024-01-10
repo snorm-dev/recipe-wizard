@@ -116,7 +116,7 @@ paths:
                     type: string
         default:
           description: There was an error logging in with the given credentials
-          $ref: '#components/responses/GeneralError'
+          $ref: '#/components/responses/GeneralError'
   "/recipes":
     get:
       summary: Get all recipes for the logged in user
@@ -139,7 +139,7 @@ paths:
                   $ref: '#/components/schemas/Recipe'
         default:
           description: Unable to return all recipes
-          $ref: '#components/responses/GeneralError'
+          $ref: '#/components/responses/GeneralError'
     post:
       summary: Create a new recipe from a URL
       operationId: createRecipeFromUrl
