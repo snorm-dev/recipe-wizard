@@ -29,6 +29,9 @@ jobs:
           
       - name: Commit and push changes
         run: |
+          git config user.name "Seth Norman"
+          git config user.email "snorman7384@gmail.com"
+          
           git add openapi/docs.html
           git commit -m "Generated html in GitHub Actions"
           git push
