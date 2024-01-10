@@ -34,5 +34,5 @@ jobs:
           
           git add openapi/docs.html
           git commit -m "Generated html in GitHub Actions"
-          git push
+          git push origin HEAD:$GITHUB_HEAD_REF
   
