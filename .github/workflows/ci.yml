@@ -58,7 +58,7 @@ jobs:
 
       - name: Check if openapi spec chnaged
         id: isEmpty
-        run: test -z $(git diff openapi/)
+        run: test -z $(git diff HEAD..origin/main openapi/)
         continue-on-error: true
 
       - name: Set up npx
