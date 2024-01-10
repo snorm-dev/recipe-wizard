@@ -26,7 +26,7 @@ paths:
           description: the server does not respond
   "/users":
     post:
-      summary: Create a new user with a username and password
+      summary: POST /users Create a new user with a username and password
       operationId: createUser
       requestBody:
         required: true
