@@ -218,36 +218,36 @@ components:
     Recipe:
       type: object
       required: [id, created_at, updated_at, name, owner_id]
-    properties:
-      id:
-        type: integer
-        format: int64
-      created_at:
-        type: string
-        format: date-time
-      updated_at:
-        type: string
-        format: date-time
-      name:
-        type: string
-      description:
-        type: string
-      url:
-        type: string
-        format: uri
-      prep_time:
-        type: string
-      cook_time:
-        type: string
-      total_time:
-        type: string
-      owner_id:
-        type: integer
-        format: int64
-      # ingredients:
-      #   type: array
-      #   items:
-      #     $ref: '#/components/schemas/Ingredient'
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        name:
+          type: string
+        description:
+          type: string
+        url:
+          type: string
+          format: uri
+        prep_time:
+          type: string
+        cook_time:
+          type: string
+        total_time:
+          type: string
+        owner_id:
+          type: integer
+          format: int64
+        # ingredients:
+        #   type: array
+        #   items:
+        #     $ref: '#/components/schemas/Ingredient'
     GeneralError:
       type: object
       required:
