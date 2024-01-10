@@ -1,0 +1,35 @@
+---
+name: ci-docs
+
+on:
+  pull_request: 
+    branches: [main]
+    paths:
+      - 'openapi/**'
+
+jobs:
+  generate-docs:
+    name: generate-docs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: install npm
+        uses: actions/setup-node@v4
+        with:
+          cache-dependencies-path: 'openapi/package.json'
+
+      - name: build docs html
+        run: |
+          cd openapi
+          npx @redocly/cli build-docs openapi.yaml -o docs.html
+          cd ..
+          
+      - name: Commit and push changes
+        run: |
+          git add openapi/docs.html
+          git commit -m "Generated html in GitHub Actions"
+          git push
+  
