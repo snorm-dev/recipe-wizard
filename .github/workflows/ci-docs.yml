@@ -16,7 +16,8 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
         with:
-          repository: snorman7384/recipe-wizard
+          repository: snorm-dev/recipe-wizard
+          ref: ${{ github.ref_name }}
           ssh-key: ${{ secrets.ACTIONS_PRIVATE_KEY }}
 
       - name: install npm
