@@ -23,7 +23,7 @@ jobs:
       - name: install npm
         uses: actions/setup-node@v4
         with:
-          cache-dependencies-path: 'openapi/package.json'
+          cache-dependency-path: 'openapi/package.json'
 
       - name: build docs html
         run: |
