@@ -15,6 +15,7 @@ paths:
     get:
       summary: Check the server is responding to requests
       operationId: ping
+      security: []
       responses:
         '200':
           description: the server responds successfully with 'pong!'
@@ -23,11 +24,12 @@ paths:
               schema:
                 type: string
         default:
-          description: the server does not respond
+          description: the server does is not currently running
   "/users":
     post:
       summary: Create a new user with a username and password
       operationId: createUser
+      security: []
       requestBody:
         required: true
         content:

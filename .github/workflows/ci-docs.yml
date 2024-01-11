@@ -15,11 +15,15 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
+        with:
+          repository: snorm-dev/recipe-wizard
+          ref: ${{ github.event.pull_request.head.ref }}
+          ssh-key: ${{ secrets.ACTIONS_PRIVATE_KEY }}
 
       - name: install npm
         uses: actions/setup-node@v4
         with:
-          cache-dependencies-path: 'openapi/package.json'
+          cache-dependency-path: 'openapi/package.json'
 
       - name: build docs html
         run: |
