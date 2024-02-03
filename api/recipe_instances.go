@@ -11,26 +11,26 @@ import (
 )
 
 type recipeInstanceResponse struct {
-	ID                  int64                        `json:"id"`
-	CreatedAt           time.Time                    `json:"created_at"`
-	UpdatedAt           time.Time                    `json:"updated_at"`
-	GroceryListID       int64                        `json:"grocery_list_id"`
-	RecipeID            int64                        `json:"recipe_id"`
-	IngredientInstances []ingredientInstanceResponse `json:"ingredient_instances"`
+	ID            int64          `json:"id"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	GroceryListID int64          `json:"grocery_list_id"`
+	RecipeID      int64          `json:"recipe_id"`
+	Items         []itemResponse `json:"items"`
 }
 
 func domainRecipeInstanceToResponse(ri domain.RecipeInstance, iis []domain.IngredientInstance) recipeInstanceResponse {
-	instances := make([]ingredientInstanceResponse, len(iis))
+	items := make([]itemResponse, len(iis))
 	for idx, ii := range iis {
-		instances[idx] = domainIngredientInstanceToResponse(ii)
+		items[idx] = domainIngredientInstanceToResponse(ii)
 	}
 	return recipeInstanceResponse{
-		ID:                  ri.ID,
-		CreatedAt:           ri.CreatedAt,
-		UpdatedAt:           ri.UpdatedAt,
-		GroceryListID:       ri.GroceryListID,
-		RecipeID:            ri.Recipe.ID,
-		IngredientInstances: instances,
+		ID:            ri.ID,
+		CreatedAt:     ri.CreatedAt,
+		UpdatedAt:     ri.UpdatedAt,
+		GroceryListID: ri.GroceryListID,
+		RecipeID:      ri.Recipe.ID,
+		Items:         items,
 	}
 }
 

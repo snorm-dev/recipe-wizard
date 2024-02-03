@@ -9,7 +9,7 @@ import (
 	"github.com/snorman7384/recipe-wizard/domain"
 )
 
-type ingredientInstanceResponse struct {
+type itemResponse struct {
 	ID               int64              `json:"id"`
 	CreatedAt        time.Time          `json:"created_at"`
 	UpdatedAt        time.Time          `json:"updated_at"`
@@ -18,15 +18,15 @@ type ingredientInstanceResponse struct {
 	IngredientData   ingredientResponse `json:"ingredient_data"`
 }
 
-type ingredientGroupResponse struct {
-	Name      string                       `json:"name"`
-	Total     float64                      `json:"total"`
-	Units     string                       `json:"units"`
-	Instances []ingredientInstanceResponse `json:"ingredient_instances"`
+type itemGroupResponse struct {
+	Name  string         `json:"name"`
+	Total float64        `json:"total"`
+	Units string         `json:"units"`
+	Items []itemResponse `json:"items"`
 }
 
-func domainIngredientInstanceToResponse(ii domain.IngredientInstance) ingredientInstanceResponse {
-	return ingredientInstanceResponse{
+func domainIngredientInstanceToResponse(ii domain.IngredientInstance) itemResponse {
+	return itemResponse{
 		ID:               ii.ID,
 		CreatedAt:        ii.CreatedAt,
 		UpdatedAt:        ii.UpdatedAt,
@@ -36,23 +36,23 @@ func domainIngredientInstanceToResponse(ii domain.IngredientInstance) ingredient
 	}
 }
 
-func domainIngredientGroupToResponse(ig domain.IngredientGroup) ingredientGroupResponse {
-	instances := make([]ingredientInstanceResponse, len(ig.Instances))
+func domainIngredientGroupToResponse(ig domain.IngredientGroup) itemGroupResponse {
+	items := make([]itemResponse, len(ig.Instances))
 	for i, ii := range ig.Instances {
-		instances[i] = domainIngredientInstanceToResponse(ii)
+		items[i] = domainIngredientInstanceToResponse(ii)
 	}
-	return ingredientGroupResponse{
-		Name:      ig.Name,
-		Total:     ig.Total,
-		Units:     ig.Units.String(),
-		Instances: instances,
+	return itemGroupResponse{
+		Name:  ig.Name,
+		Total: ig.Total,
+		Units: ig.Units.String(),
+		Items: items,
 	}
 }
 
-func (c *Config) handleGetIngredientInstancesForGroceryList() http.HandlerFunc {
+func (c *Config) handleGetItemsForGroceryList() http.HandlerFunc {
 	type response struct {
-		Instances []ingredientInstanceResponse `json:"ingredient_instances,omitempty"`
-		Groups    []ingredientGroupResponse    `json:"ingredient_groups,omitempty"`
+		Items  []itemResponse      `json:"items,omitempty"`
+		Groups []itemGroupResponse `json:"item_groups,omitempty"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +103,7 @@ func (c *Config) handleGetIngredientInstancesForGroceryList() http.HandlerFunc {
 
 			for _, ingredientInstance := range ingredientInstances {
 				r := domainIngredientInstanceToResponse(ingredientInstance)
-				resBody.Instances = append(resBody.Instances, r)
+				resBody.Items = append(resBody.Items, r)
 			}
 		}
 		respondWithJSON(w, http.StatusOK, resBody)
