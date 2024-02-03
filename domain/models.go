@@ -27,7 +27,7 @@ type Ingredient struct {
 	StandardUnits  ingparse.StandardUnit
 }
 
-type IngredientInstance struct {
+type Item struct {
 	ID               int64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
@@ -67,9 +67,9 @@ type User struct {
 	LastName       string
 }
 
-type IngredientGroup struct {
-	Name      string
-	Total     float64
-	Units     ingparse.StandardUnit
-	Instances []IngredientInstance
+type ItemGroup struct {
+	Name  string
+	Total float64
+	Units ingparse.StandardUnit
+	Items []Item
 }

@@ -25,7 +25,7 @@ type itemGroupResponse struct {
 	Items []itemResponse `json:"items"`
 }
 
-func domainIngredientInstanceToResponse(ii domain.IngredientInstance) itemResponse {
+func domainItemToResponse(ii domain.Item) itemResponse {
 	return itemResponse{
 		ID:               ii.ID,
 		CreatedAt:        ii.CreatedAt,
@@ -36,10 +36,10 @@ func domainIngredientInstanceToResponse(ii domain.IngredientInstance) itemRespon
 	}
 }
 
-func domainIngredientGroupToResponse(ig domain.IngredientGroup) itemGroupResponse {
-	items := make([]itemResponse, len(ig.Instances))
-	for i, ii := range ig.Instances {
-		items[i] = domainIngredientInstanceToResponse(ii)
+func domainItemGroupToResponse(ig domain.ItemGroup) itemGroupResponse {
+	items := make([]itemResponse, len(ig.Items))
+	for i, ii := range ig.Items {
+		items[i] = domainItemToResponse(ii)
 	}
 	return itemGroupResponse{
 		Name:  ig.Name,
@@ -84,25 +84,25 @@ func (c *Config) handleGetItemsForGroceryList() http.HandlerFunc {
 
 		resBody := response{}
 		if r.URL.Query().Has("grouped") {
-			ingredientGroups, err := c.Domain.GetIngredientGroupsForGroceryList(r.Context(), groceryList)
+			itemGroups, err := c.Domain.GetItemGroupsForGroceryList(r.Context(), groceryList)
 			if err != nil {
 				respondWithDomainError(w, err)
 				return
 			}
 
-			for _, ingredientGroup := range ingredientGroups {
-				r := domainIngredientGroupToResponse(ingredientGroup)
+			for _, itemGroup := range itemGroups {
+				r := domainItemGroupToResponse(itemGroup)
 				resBody.Groups = append(resBody.Groups, r)
 			}
 		} else {
-			ingredientInstances, err := c.Domain.GetIngredientInstancesForGroceryList(r.Context(), groceryList)
+			items, err := c.Domain.GetItemsForGroceryList(r.Context(), groceryList)
 			if err != nil {
 				respondWithDomainError(w, err)
 				return
 			}
 
-			for _, ingredientInstance := range ingredientInstances {
-				r := domainIngredientInstanceToResponse(ingredientInstance)
+			for _, item := range items {
+				r := domainItemToResponse(item)
 				resBody.Items = append(resBody.Items, r)
 			}
 		}
