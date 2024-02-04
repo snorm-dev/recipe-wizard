@@ -21,7 +21,7 @@ func databaseToDomainItem(ii database.IngredientInstance, ingredient Ingredient)
 
 func (c *Config) GetItemsForRecipeInstance(ctx context.Context, recipeInstance RecipeInstance) ([]Item, error) {
 
-	rows, err := c.Querier().GetExtendedIngredientInstancesForRecipeInstance(ctx, sql.NullInt64{Valid: true, Int64: recipeInstance.ID})
+	rows, err := c.Querier().GetExtendedItemsForRecipeInstance(ctx, sql.NullInt64{Valid: true, Int64: recipeInstance.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (c *Config) GetItemsForRecipeInstance(ctx context.Context, recipeInstance R
 }
 
 func (c *Config) GetItemsForGroceryList(ctx context.Context, groceryList GroceryList) ([]Item, error) {
-	rows, err := c.Querier().GetExtendedIngredientInstancesForGroceryList(ctx, groceryList.ID)
+	rows, err := c.Querier().GetExtendedItemsForGroceryList(ctx, groceryList.ID)
 	if err != nil {
 		return nil, err
 	}
