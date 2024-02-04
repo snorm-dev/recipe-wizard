@@ -11,26 +11,26 @@ import (
 )
 
 type recipeInstanceResponse struct {
-	ID                  int64                        `json:"id"`
-	CreatedAt           time.Time                    `json:"created_at"`
-	UpdatedAt           time.Time                    `json:"updated_at"`
-	GroceryListID       int64                        `json:"grocery_list_id"`
-	RecipeID            int64                        `json:"recipe_id"`
-	IngredientInstances []ingredientInstanceResponse `json:"ingredient_instances"`
+	ID            int64          `json:"id"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	GroceryListID int64          `json:"grocery_list_id"`
+	RecipeID      int64          `json:"recipe_id"`
+	Items         []itemResponse `json:"items"`
 }
 
-func domainRecipeInstanceToResponse(ri domain.RecipeInstance, iis []domain.IngredientInstance) recipeInstanceResponse {
-	instances := make([]ingredientInstanceResponse, len(iis))
-	for idx, ii := range iis {
-		instances[idx] = domainIngredientInstanceToResponse(ii)
+func domainRecipeInstanceToResponse(ri domain.RecipeInstance, its []domain.Item) recipeInstanceResponse {
+	items := make([]itemResponse, len(its))
+	for idx, it := range its {
+		items[idx] = domainItemToResponse(it)
 	}
 	return recipeInstanceResponse{
-		ID:                  ri.ID,
-		CreatedAt:           ri.CreatedAt,
-		UpdatedAt:           ri.UpdatedAt,
-		GroceryListID:       ri.GroceryListID,
-		RecipeID:            ri.Recipe.ID,
-		IngredientInstances: instances,
+		ID:            ri.ID,
+		CreatedAt:     ri.CreatedAt,
+		UpdatedAt:     ri.UpdatedAt,
+		GroceryListID: ri.GroceryListID,
+		RecipeID:      ri.Recipe.ID,
+		Items:         items,
 	}
 }
 
@@ -75,13 +75,13 @@ func (c *Config) handlePostRecipeInGroceryList() http.HandlerFunc {
 			return
 		}
 
-		ingredientInstances, err := c.Domain.GetIngredientInstancesForRecipeInstance(r.Context(), recipeInstance)
+		items, err := c.Domain.GetItemsForRecipeInstance(r.Context(), recipeInstance)
 		if err != nil {
 			respondWithDomainError(w, err)
 			return
 		}
 
-		var resBody = domainRecipeInstanceToResponse(recipeInstance, ingredientInstances)
+		var resBody = domainRecipeInstanceToResponse(recipeInstance, items)
 
 		respondWithJSON(w, http.StatusCreated, &resBody)
 	}
@@ -123,13 +123,13 @@ func (c *Config) handleGetRecipesInGroceryList() http.HandlerFunc {
 
 		for i, recipeInstance := range recipeInstances {
 
-			ingredientInstances, err := c.Domain.GetIngredientInstancesForRecipeInstance(r.Context(), recipeInstance)
+			items, err := c.Domain.GetItemsForRecipeInstance(r.Context(), recipeInstance)
 			if err != nil {
 				respondWithDomainError(w, err)
 				return
 			}
 
-			r := domainRecipeInstanceToResponse(recipeInstance, ingredientInstances)
+			r := domainRecipeInstanceToResponse(recipeInstance, items)
 			resBody[i] = r
 		}
 

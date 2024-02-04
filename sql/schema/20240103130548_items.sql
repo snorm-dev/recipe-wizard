@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TABLE ingredient_instances (
+CREATE TABLE items (
 	id BIGINT PRIMARY KEY AUTO_INCREMENT,
 	created_at TIMESTAMP NOT NULL,
 	updated_at TIMESTAMP NOT NULL,
@@ -12,5 +12,5 @@ CREATE TABLE ingredient_instances (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE ingredient_instances;
+DROP TABLE items;
 -- +goose StatementEnd

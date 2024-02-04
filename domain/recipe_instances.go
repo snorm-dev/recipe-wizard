@@ -58,7 +58,7 @@ func (c *Config) CreateRecipeInstance(ctx context.Context, user User, groceryLis
 
 		now := time.Now()
 
-		_, err := qtx.CreateIngredientInstance(ctx, database.CreateIngredientInstanceParams{
+		_, err := qtx.CreateItem(ctx, database.CreateItemParams{
 			CreatedAt:        now,
 			UpdatedAt:        now,
 			IngredientID:     ingredient.ID,
