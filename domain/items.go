@@ -8,13 +8,13 @@ import (
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
 
-func databaseToDomainItem(ii database.IngredientInstance, ingredient Ingredient) Item {
+func databaseToDomainItem(it database.Item, ingredient Ingredient) Item {
 	return Item{
-		ID:               ii.ID,
-		CreatedAt:        ii.CreatedAt,
-		UpdatedAt:        ii.UpdatedAt,
-		GroceryListID:    ii.GroceryListID,
-		RecipeInstanceID: ii.RecipeInstanceID.Int64,
+		ID:               it.ID,
+		CreatedAt:        it.CreatedAt,
+		UpdatedAt:        it.UpdatedAt,
+		GroceryListID:    it.GroceryListID,
+		RecipeInstanceID: it.RecipeInstanceID.Int64,
 		Ingredient:       ingredient,
 	}
 }
@@ -29,7 +29,7 @@ func (c *Config) GetItemsForRecipeInstance(ctx context.Context, recipeInstance R
 	items := make([]Item, len(rows))
 
 	for i, row := range rows {
-		items[i] = databaseToDomainItem(row.IngredientInstance, databaseToDomainIngredient(row.Ingredient))
+		items[i] = databaseToDomainItem(row.Item, databaseToDomainIngredient(row.Ingredient))
 	}
 
 	return items, nil
@@ -44,7 +44,7 @@ func (c *Config) GetItemsForGroceryList(ctx context.Context, groceryList Grocery
 	items := make([]Item, len(rows))
 
 	for i, row := range rows {
-		items[i] = databaseToDomainItem(row.IngredientInstance, databaseToDomainIngredient(row.Ingredient))
+		items[i] = databaseToDomainItem(row.Item, databaseToDomainIngredient(row.Ingredient))
 	}
 
 	return items, nil
@@ -64,24 +64,24 @@ func (c *Config) GetItemGroupsForGroceryList(ctx context.Context, groceryList Gr
 
 	totalsMap := make(map[string]map[ingparse.StandardUnit]ItemGroup)
 
-	for _, ii := range items {
+	for _, it := range items {
 
-		name := ii.Ingredient.Name
+		name := it.Ingredient.Name
 		if _, ok := totalsMap[name]; !ok {
 			totalsMap[name] = make(map[ingparse.StandardUnit]ItemGroup)
 		}
 
-		units := ii.Ingredient.StandardUnits
+		units := it.Ingredient.StandardUnits
 		if entry, ok := totalsMap[name][units]; !ok {
 			totalsMap[name][units] = ItemGroup{
 				Name:  name,
 				Units: units,
-				Total: ii.Ingredient.StandardAmount,
-				Items: append(make([]Item, 0), ii),
+				Total: it.Ingredient.StandardAmount,
+				Items: append(make([]Item, 0), it),
 			}
 		} else {
-			entry.Total += ii.Ingredient.StandardAmount
-			entry.Items = append(entry.Items, ii)
+			entry.Total += it.Ingredient.StandardAmount
+			entry.Items = append(entry.Items, it)
 			totalsMap[name][units] = entry
 		}
 

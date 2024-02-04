@@ -1,30 +1,30 @@
 -- name: CreateItem :execresult
-INSERT INTO ingredient_instances (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id)
+INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id)
 VALUES (?, ?, ?, ?, ?);
 
 -- name: GetItem :one
-SELECT * FROM ingredient_instances
+SELECT * FROM items
 WHERE id = ?;
 
 -- name: GetItemsForRecipeInstance :many
-SELECT * FROM ingredient_instances ii 
-WHERE ii.recipe_instance_id = ?;
+SELECT * FROM items it 
+WHERE it.recipe_instance_id = ?;
 
 -- name: GetExtendedItem :one
-SELECT sqlc.embed(ii), sqlc.embed(i) FROM ingredient_instances ii
-JOIN ingredients i ON ii.ingredient_id = i.id
-WHERE ii.id = ?;
+SELECT sqlc.embed(it), sqlc.embed(i) FROM items it
+JOIN ingredients i ON it.ingredient_id = i.id
+WHERE it.id = ?;
 
 -- name: GetExtendedItemsForRecipeInstance :many
-SELECT sqlc.embed(ii), sqlc.embed(i) FROM ingredient_instances ii
-JOIN ingredients i ON ii.ingredient_id = i.id
-WHERE ii.recipe_instance_id = ?;
+SELECT sqlc.embed(it), sqlc.embed(i) FROM items it
+JOIN ingredients i ON it.ingredient_id = i.id
+WHERE it.recipe_instance_id = ?;
 
 -- name: GetItemsForGroceryList :many
-SELECT * FROM ingredient_instances ii 
-WHERE ii.grocery_list_id = ?;
+SELECT * FROM items it 
+WHERE it.grocery_list_id = ?;
 
 -- name: GetExtendedItemsForGroceryList :many
-SELECT sqlc.embed(ii), sqlc.embed(i) FROM ingredient_instances ii
-JOIN ingredients i ON ii.ingredient_id = i.id
-WHERE ii.grocery_list_id = ?;
+SELECT sqlc.embed(it), sqlc.embed(i) FROM items it
+JOIN ingredients i ON it.ingredient_id = i.id
+WHERE it.grocery_list_id = ?;

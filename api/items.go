@@ -25,21 +25,21 @@ type itemGroupResponse struct {
 	Items []itemResponse `json:"items"`
 }
 
-func domainItemToResponse(ii domain.Item) itemResponse {
+func domainItemToResponse(it domain.Item) itemResponse {
 	return itemResponse{
-		ID:               ii.ID,
-		CreatedAt:        ii.CreatedAt,
-		UpdatedAt:        ii.UpdatedAt,
-		GroceryListID:    ii.GroceryListID,
-		RecipeInstanceID: ii.RecipeInstanceID,
-		IngredientData:   domainIngredientToReponse(ii.Ingredient),
+		ID:               it.ID,
+		CreatedAt:        it.CreatedAt,
+		UpdatedAt:        it.UpdatedAt,
+		GroceryListID:    it.GroceryListID,
+		RecipeInstanceID: it.RecipeInstanceID,
+		IngredientData:   domainIngredientToReponse(it.Ingredient),
 	}
 }
 
 func domainItemGroupToResponse(ig domain.ItemGroup) itemGroupResponse {
 	items := make([]itemResponse, len(ig.Items))
-	for i, ii := range ig.Items {
-		items[i] = domainItemToResponse(ii)
+	for i, it := range ig.Items {
+		items[i] = domainItemToResponse(it)
 	}
 	return itemGroupResponse{
 		Name:  ig.Name,

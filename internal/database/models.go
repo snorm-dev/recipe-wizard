@@ -30,7 +30,7 @@ type Ingredient struct {
 	StandardUnits  string
 }
 
-type IngredientInstance struct {
+type Item struct {
 	ID               int64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time

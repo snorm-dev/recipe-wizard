@@ -12,7 +12,7 @@ import (
 )
 
 const createItem = `-- name: CreateItem :execresult
-INSERT INTO ingredient_instances (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id)
+INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id)
 VALUES (?, ?, ?, ?, ?)
 `
 
@@ -35,26 +35,26 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (sql.Res
 }
 
 const getExtendedItem = `-- name: GetExtendedItem :one
-SELECT ii.id, ii.created_at, ii.updated_at, ii.grocery_list_id, ii.recipe_instance_id, ii.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM ingredient_instances ii
-JOIN ingredients i ON ii.ingredient_id = i.id
-WHERE ii.id = ?
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
+JOIN ingredients i ON it.ingredient_id = i.id
+WHERE it.id = ?
 `
 
 type GetExtendedItemRow struct {
-	IngredientInstance IngredientInstance
-	Ingredient         Ingredient
+	Item       Item
+	Ingredient Ingredient
 }
 
 func (q *Queries) GetExtendedItem(ctx context.Context, id int64) (GetExtendedItemRow, error) {
 	row := q.db.QueryRowContext(ctx, getExtendedItem, id)
 	var i GetExtendedItemRow
 	err := row.Scan(
-		&i.IngredientInstance.ID,
-		&i.IngredientInstance.CreatedAt,
-		&i.IngredientInstance.UpdatedAt,
-		&i.IngredientInstance.GroceryListID,
-		&i.IngredientInstance.RecipeInstanceID,
-		&i.IngredientInstance.IngredientID,
+		&i.Item.ID,
+		&i.Item.CreatedAt,
+		&i.Item.UpdatedAt,
+		&i.Item.GroceryListID,
+		&i.Item.RecipeInstanceID,
+		&i.Item.IngredientID,
 		&i.Ingredient.ID,
 		&i.Ingredient.CreatedAt,
 		&i.Ingredient.UpdatedAt,
@@ -70,14 +70,14 @@ func (q *Queries) GetExtendedItem(ctx context.Context, id int64) (GetExtendedIte
 }
 
 const getExtendedItemsForGroceryList = `-- name: GetExtendedItemsForGroceryList :many
-SELECT ii.id, ii.created_at, ii.updated_at, ii.grocery_list_id, ii.recipe_instance_id, ii.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM ingredient_instances ii
-JOIN ingredients i ON ii.ingredient_id = i.id
-WHERE ii.grocery_list_id = ?
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
+JOIN ingredients i ON it.ingredient_id = i.id
+WHERE it.grocery_list_id = ?
 `
 
 type GetExtendedItemsForGroceryListRow struct {
-	IngredientInstance IngredientInstance
-	Ingredient         Ingredient
+	Item       Item
+	Ingredient Ingredient
 }
 
 func (q *Queries) GetExtendedItemsForGroceryList(ctx context.Context, groceryListID int64) ([]GetExtendedItemsForGroceryListRow, error) {
@@ -90,12 +90,12 @@ func (q *Queries) GetExtendedItemsForGroceryList(ctx context.Context, groceryLis
 	for rows.Next() {
 		var i GetExtendedItemsForGroceryListRow
 		if err := rows.Scan(
-			&i.IngredientInstance.ID,
-			&i.IngredientInstance.CreatedAt,
-			&i.IngredientInstance.UpdatedAt,
-			&i.IngredientInstance.GroceryListID,
-			&i.IngredientInstance.RecipeInstanceID,
-			&i.IngredientInstance.IngredientID,
+			&i.Item.ID,
+			&i.Item.CreatedAt,
+			&i.Item.UpdatedAt,
+			&i.Item.GroceryListID,
+			&i.Item.RecipeInstanceID,
+			&i.Item.IngredientID,
 			&i.Ingredient.ID,
 			&i.Ingredient.CreatedAt,
 			&i.Ingredient.UpdatedAt,
@@ -121,14 +121,14 @@ func (q *Queries) GetExtendedItemsForGroceryList(ctx context.Context, groceryLis
 }
 
 const getExtendedItemsForRecipeInstance = `-- name: GetExtendedItemsForRecipeInstance :many
-SELECT ii.id, ii.created_at, ii.updated_at, ii.grocery_list_id, ii.recipe_instance_id, ii.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM ingredient_instances ii
-JOIN ingredients i ON ii.ingredient_id = i.id
-WHERE ii.recipe_instance_id = ?
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
+JOIN ingredients i ON it.ingredient_id = i.id
+WHERE it.recipe_instance_id = ?
 `
 
 type GetExtendedItemsForRecipeInstanceRow struct {
-	IngredientInstance IngredientInstance
-	Ingredient         Ingredient
+	Item       Item
+	Ingredient Ingredient
 }
 
 func (q *Queries) GetExtendedItemsForRecipeInstance(ctx context.Context, recipeInstanceID sql.NullInt64) ([]GetExtendedItemsForRecipeInstanceRow, error) {
@@ -141,12 +141,12 @@ func (q *Queries) GetExtendedItemsForRecipeInstance(ctx context.Context, recipeI
 	for rows.Next() {
 		var i GetExtendedItemsForRecipeInstanceRow
 		if err := rows.Scan(
-			&i.IngredientInstance.ID,
-			&i.IngredientInstance.CreatedAt,
-			&i.IngredientInstance.UpdatedAt,
-			&i.IngredientInstance.GroceryListID,
-			&i.IngredientInstance.RecipeInstanceID,
-			&i.IngredientInstance.IngredientID,
+			&i.Item.ID,
+			&i.Item.CreatedAt,
+			&i.Item.UpdatedAt,
+			&i.Item.GroceryListID,
+			&i.Item.RecipeInstanceID,
+			&i.Item.IngredientID,
 			&i.Ingredient.ID,
 			&i.Ingredient.CreatedAt,
 			&i.Ingredient.UpdatedAt,
@@ -172,13 +172,13 @@ func (q *Queries) GetExtendedItemsForRecipeInstance(ctx context.Context, recipeI
 }
 
 const getItem = `-- name: GetItem :one
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM ingredient_instances
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM items
 WHERE id = ?
 `
 
-func (q *Queries) GetItem(ctx context.Context, id int64) (IngredientInstance, error) {
+func (q *Queries) GetItem(ctx context.Context, id int64) (Item, error) {
 	row := q.db.QueryRowContext(ctx, getItem, id)
-	var i IngredientInstance
+	var i Item
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
@@ -191,19 +191,19 @@ func (q *Queries) GetItem(ctx context.Context, id int64) (IngredientInstance, er
 }
 
 const getItemsForGroceryList = `-- name: GetItemsForGroceryList :many
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM ingredient_instances ii 
-WHERE ii.grocery_list_id = ?
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM items it 
+WHERE it.grocery_list_id = ?
 `
 
-func (q *Queries) GetItemsForGroceryList(ctx context.Context, groceryListID int64) ([]IngredientInstance, error) {
+func (q *Queries) GetItemsForGroceryList(ctx context.Context, groceryListID int64) ([]Item, error) {
 	rows, err := q.db.QueryContext(ctx, getItemsForGroceryList, groceryListID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []IngredientInstance
+	var items []Item
 	for rows.Next() {
-		var i IngredientInstance
+		var i Item
 		if err := rows.Scan(
 			&i.ID,
 			&i.CreatedAt,
@@ -226,19 +226,19 @@ func (q *Queries) GetItemsForGroceryList(ctx context.Context, groceryListID int6
 }
 
 const getItemsForRecipeInstance = `-- name: GetItemsForRecipeInstance :many
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM ingredient_instances ii 
-WHERE ii.recipe_instance_id = ?
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM items it 
+WHERE it.recipe_instance_id = ?
 `
 
-func (q *Queries) GetItemsForRecipeInstance(ctx context.Context, recipeInstanceID sql.NullInt64) ([]IngredientInstance, error) {
+func (q *Queries) GetItemsForRecipeInstance(ctx context.Context, recipeInstanceID sql.NullInt64) ([]Item, error) {
 	rows, err := q.db.QueryContext(ctx, getItemsForRecipeInstance, recipeInstanceID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []IngredientInstance
+	var items []Item
 	for rows.Next() {
-		var i IngredientInstance
+		var i Item
 		if err := rows.Scan(
 			&i.ID,
 			&i.CreatedAt,

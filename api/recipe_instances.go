@@ -19,10 +19,10 @@ type recipeInstanceResponse struct {
 	Items         []itemResponse `json:"items"`
 }
 
-func domainRecipeInstanceToResponse(ri domain.RecipeInstance, iis []domain.Item) recipeInstanceResponse {
-	items := make([]itemResponse, len(iis))
-	for idx, ii := range iis {
-		items[idx] = domainItemToResponse(ii)
+func domainRecipeInstanceToResponse(ri domain.RecipeInstance, its []domain.Item) recipeInstanceResponse {
+	items := make([]itemResponse, len(its))
+	for idx, it := range its {
+		items[idx] = domainItemToResponse(it)
 	}
 	return recipeInstanceResponse{
 		ID:            ri.ID,
