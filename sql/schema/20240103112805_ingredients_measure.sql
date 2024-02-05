@@ -9,5 +9,5 @@ ALTER TABLE ingredients
 
 -- +goose Down
 -- +goose StatementBegin
-ALTER TABLE recipes DROP amount, units, standard_amount, standard_units;
+ALTER TABLE ingredients DROP amount, units, standard_amount, standard_units;
 -- +goose StatementEnd
