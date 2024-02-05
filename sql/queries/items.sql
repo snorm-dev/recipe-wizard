@@ -1,6 +1,6 @@
 -- name: CreateItem :execresult
-INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id)
-VALUES (?, ?, ?, ?, ?);
+INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id, name, description, amount, units, standard_amount, standard_units)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: GetItem :one
 SELECT * FROM items

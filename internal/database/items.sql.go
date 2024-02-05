@@ -12,8 +12,8 @@ import (
 )
 
 const createItem = `-- name: CreateItem :execresult
-INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id, name, description, amount, units, standard_amount, standard_units)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateItemParams struct {
@@ -22,6 +22,12 @@ type CreateItemParams struct {
 	IngredientID     sql.NullInt64
 	GroceryListID    int64
 	RecipeInstanceID sql.NullInt64
+	Name             string
+	Description      sql.NullString
+	Amount           float64
+	Units            string
+	StandardAmount   float64
+	StandardUnits    string
 }
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (sql.Result, error) {
@@ -31,6 +37,12 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (sql.Res
 		arg.IngredientID,
 		arg.GroceryListID,
 		arg.RecipeInstanceID,
+		arg.Name,
+		arg.Description,
+		arg.Amount,
+		arg.Units,
+		arg.StandardAmount,
+		arg.StandardUnits,
 	)
 }
 

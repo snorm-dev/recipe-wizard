@@ -64,6 +64,12 @@ func (c *Config) CreateRecipeInstance(ctx context.Context, user User, groceryLis
 			IngredientID:     sql.NullInt64{Int64: ingredient.ID, Valid: true},
 			GroceryListID:    groceryList.ID,
 			RecipeInstanceID: sql.NullInt64{Int64: row.RecipeInstance.ID, Valid: true},
+			Name:             ingredient.Name,
+			Description:      ingredient.Description,
+			Amount:           ingredient.Amount,
+			Units:            ingredient.Units,
+			StandardAmount:   ingredient.StandardAmount,
+			StandardUnits:    ingredient.StandardUnits,
 		})
 		if err != nil {
 			return RecipeInstance{}, err
