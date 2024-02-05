@@ -72,6 +72,7 @@ func (c *Config) handlePostRecipe() http.HandlerFunc {
 		recipe, err := c.Domain.CreateRecipeFromUrl(r.Context(), user, reqBody.Url)
 		if err != nil {
 			respondWithDomainError(w, err)
+			return
 		}
 
 		ingredients, err := c.Domain.GetIngredientsForRecipe(r.Context(), user, recipe)
