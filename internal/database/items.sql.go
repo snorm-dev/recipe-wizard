@@ -19,7 +19,7 @@ VALUES (?, ?, ?, ?, ?)
 type CreateItemParams struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
-	IngredientID     int64
+	IngredientID     sql.NullInt64
 	GroceryListID    int64
 	RecipeInstanceID sql.NullInt64
 }
@@ -35,8 +35,8 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (sql.Res
 }
 
 const getExtendedItem = `-- name: GetExtendedItem :one
-SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
-JOIN ingredients i ON it.ingredient_id = i.id
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
+LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.id = ?
 `
 
@@ -55,6 +55,12 @@ func (q *Queries) GetExtendedItem(ctx context.Context, id int64) (GetExtendedIte
 		&i.Item.GroceryListID,
 		&i.Item.RecipeInstanceID,
 		&i.Item.IngredientID,
+		&i.Item.Name,
+		&i.Item.Description,
+		&i.Item.Amount,
+		&i.Item.Units,
+		&i.Item.StandardAmount,
+		&i.Item.StandardUnits,
 		&i.Ingredient.ID,
 		&i.Ingredient.CreatedAt,
 		&i.Ingredient.UpdatedAt,
@@ -70,8 +76,8 @@ func (q *Queries) GetExtendedItem(ctx context.Context, id int64) (GetExtendedIte
 }
 
 const getExtendedItemsForGroceryList = `-- name: GetExtendedItemsForGroceryList :many
-SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
-JOIN ingredients i ON it.ingredient_id = i.id
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
+LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.grocery_list_id = ?
 `
 
@@ -96,6 +102,12 @@ func (q *Queries) GetExtendedItemsForGroceryList(ctx context.Context, groceryLis
 			&i.Item.GroceryListID,
 			&i.Item.RecipeInstanceID,
 			&i.Item.IngredientID,
+			&i.Item.Name,
+			&i.Item.Description,
+			&i.Item.Amount,
+			&i.Item.Units,
+			&i.Item.StandardAmount,
+			&i.Item.StandardUnits,
 			&i.Ingredient.ID,
 			&i.Ingredient.CreatedAt,
 			&i.Ingredient.UpdatedAt,
@@ -121,8 +133,8 @@ func (q *Queries) GetExtendedItemsForGroceryList(ctx context.Context, groceryLis
 }
 
 const getExtendedItemsForRecipeInstance = `-- name: GetExtendedItemsForRecipeInstance :many
-SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
-JOIN ingredients i ON it.ingredient_id = i.id
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
+LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.recipe_instance_id = ?
 `
 
@@ -147,6 +159,12 @@ func (q *Queries) GetExtendedItemsForRecipeInstance(ctx context.Context, recipeI
 			&i.Item.GroceryListID,
 			&i.Item.RecipeInstanceID,
 			&i.Item.IngredientID,
+			&i.Item.Name,
+			&i.Item.Description,
+			&i.Item.Amount,
+			&i.Item.Units,
+			&i.Item.StandardAmount,
+			&i.Item.StandardUnits,
 			&i.Ingredient.ID,
 			&i.Ingredient.CreatedAt,
 			&i.Ingredient.UpdatedAt,
@@ -172,7 +190,7 @@ func (q *Queries) GetExtendedItemsForRecipeInstance(ctx context.Context, recipeI
 }
 
 const getItem = `-- name: GetItem :one
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM items
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units FROM items
 WHERE id = ?
 `
 
@@ -186,12 +204,18 @@ func (q *Queries) GetItem(ctx context.Context, id int64) (Item, error) {
 		&i.GroceryListID,
 		&i.RecipeInstanceID,
 		&i.IngredientID,
+		&i.Name,
+		&i.Description,
+		&i.Amount,
+		&i.Units,
+		&i.StandardAmount,
+		&i.StandardUnits,
 	)
 	return i, err
 }
 
 const getItemsForGroceryList = `-- name: GetItemsForGroceryList :many
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM items it 
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units FROM items it 
 WHERE it.grocery_list_id = ?
 `
 
@@ -211,6 +235,12 @@ func (q *Queries) GetItemsForGroceryList(ctx context.Context, groceryListID int6
 			&i.GroceryListID,
 			&i.RecipeInstanceID,
 			&i.IngredientID,
+			&i.Name,
+			&i.Description,
+			&i.Amount,
+			&i.Units,
+			&i.StandardAmount,
+			&i.StandardUnits,
 		); err != nil {
 			return nil, err
 		}
@@ -226,7 +256,7 @@ func (q *Queries) GetItemsForGroceryList(ctx context.Context, groceryListID int6
 }
 
 const getItemsForRecipeInstance = `-- name: GetItemsForRecipeInstance :many
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id FROM items it 
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units FROM items it 
 WHERE it.recipe_instance_id = ?
 `
 
@@ -246,6 +276,12 @@ func (q *Queries) GetItemsForRecipeInstance(ctx context.Context, recipeInstanceI
 			&i.GroceryListID,
 			&i.RecipeInstanceID,
 			&i.IngredientID,
+			&i.Name,
+			&i.Description,
+			&i.Amount,
+			&i.Units,
+			&i.StandardAmount,
+			&i.StandardUnits,
 		); err != nil {
 			return nil, err
 		}

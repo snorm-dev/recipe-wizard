@@ -12,12 +12,12 @@ WHERE it.recipe_instance_id = ?;
 
 -- name: GetExtendedItem :one
 SELECT sqlc.embed(it), sqlc.embed(i) FROM items it
-JOIN ingredients i ON it.ingredient_id = i.id
+LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.id = ?;
 
 -- name: GetExtendedItemsForRecipeInstance :many
 SELECT sqlc.embed(it), sqlc.embed(i) FROM items it
-JOIN ingredients i ON it.ingredient_id = i.id
+LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.recipe_instance_id = ?;
 
 -- name: GetItemsForGroceryList :many
@@ -26,5 +26,5 @@ WHERE it.grocery_list_id = ?;
 
 -- name: GetExtendedItemsForGroceryList :many
 SELECT sqlc.embed(it), sqlc.embed(i) FROM items it
-JOIN ingredients i ON it.ingredient_id = i.id
+LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.grocery_list_id = ?;

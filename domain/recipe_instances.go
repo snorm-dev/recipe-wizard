@@ -61,7 +61,7 @@ func (c *Config) CreateRecipeInstance(ctx context.Context, user User, groceryLis
 		_, err := qtx.CreateItem(ctx, database.CreateItemParams{
 			CreatedAt:        now,
 			UpdatedAt:        now,
-			IngredientID:     ingredient.ID,
+			IngredientID:     sql.NullInt64{Int64: ingredient.ID, Valid: true},
 			GroceryListID:    groceryList.ID,
 			RecipeInstanceID: sql.NullInt64{Int64: row.RecipeInstance.ID, Valid: true},
 		})

@@ -34,6 +34,12 @@ type Item struct {
 	GroceryListID    int64
 	RecipeInstanceID int64
 	Ingredient       Ingredient
+	Name             string
+	Description      string
+	Amount           float64
+	Units            string
+	StandardAmount   float64
+	StandardUnits    ingparse.StandardUnit
 }
 
 type Recipe struct {

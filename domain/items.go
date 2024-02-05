@@ -16,6 +16,12 @@ func databaseToDomainItem(it database.Item, ingredient Ingredient) Item {
 		GroceryListID:    it.GroceryListID,
 		RecipeInstanceID: it.RecipeInstanceID.Int64,
 		Ingredient:       ingredient,
+		Name:             it.Name,
+		Description:      it.Description.String,
+		Amount:           it.Amount,
+		Units:            it.Units,
+		StandardAmount:   it.StandardAmount,
+		StandardUnits:    ingparse.StandardUnitFromString(it.StandardUnits),
 	}
 }
 
