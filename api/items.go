@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,12 +11,15 @@ import (
 )
 
 type itemResponse struct {
-	ID               int64              `json:"id"`
-	CreatedAt        time.Time          `json:"created_at"`
-	UpdatedAt        time.Time          `json:"updated_at"`
-	GroceryListID    int64              `json:"grocery_list_id"`
-	RecipeInstanceID int64              `json:"recipe_instance_id,omitempty"` // 0 is never a sql id, so we can treat 0 as "no recipe instance"
-	IngredientData   ingredientResponse `json:"ingredient_data"`
+	ID               int64           `json:"id"`
+	CreatedAt        time.Time       `json:"created_at"`
+	UpdatedAt        time.Time       `json:"updated_at"`
+	GroceryListID    int64           `json:"grocery_list_id"`
+	RecipeInstanceID int64           `json:"recipe_instance_id,omitempty"` // 0 is never a sql id, so we can treat 0 as "no recipe instance"
+	IngredientID     int64           `json:"ingredient_id,omitempty"`
+	Name             string          `json:"name"`
+	Description      string          `json:"description,omitempty"`
+	Measure          measureResponse `json:"measure"`
 }
 
 type itemGroupResponse struct {
@@ -32,7 +36,15 @@ func domainItemToResponse(it domain.Item) itemResponse {
 		UpdatedAt:        it.UpdatedAt,
 		GroceryListID:    it.GroceryListID,
 		RecipeInstanceID: it.RecipeInstanceID,
-		IngredientData:   domainIngredientToReponse(it.Ingredient),
+		IngredientID:     it.IngredientID,
+		Name:             it.Name,
+		Description:      it.Description,
+		Measure: measureResponse{
+			OriginalAmount: it.Amount,
+			OriginalUnits:  it.Units,
+			StandardAmount: it.StandardAmount,
+			StandardUnits:  it.StandardUnits.String(),
+		},
 	}
 }
 
@@ -46,6 +58,55 @@ func domainItemGroupToResponse(ig domain.ItemGroup) itemGroupResponse {
 		Total: ig.Total,
 		Units: ig.Units.String(),
 		Items: items,
+	}
+}
+
+func (c *Config) handlePostItem() http.HandlerFunc {
+	type request struct {
+		Name        string  `json:"name"`
+		Description string  `json:"description"`
+		Amount      float64 `json:"amount"`
+		Units       string  `json:"units"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		reqBody := request{}
+
+		err := json.NewDecoder(r.Body).Decode(&reqBody)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
+		if !ok {
+			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
+			return
+		}
+
+		idString := chi.URLParam(r, "grocery_list_id")
+
+		glID, err := strconv.ParseInt(idString, 10, 64)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Id is not an integer")
+			return
+		}
+
+		groceryList, err := c.Domain.GetGroceryList(r.Context(), user, glID)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		item, err := c.Domain.CreateItem(r.Context(), groceryList, reqBody.Name, reqBody.Description, float64(reqBody.Amount), reqBody.Units)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		resBody := domainItemToResponse(item)
+
+		respondWithJSON(w, http.StatusOK, resBody)
 	}
 }
 

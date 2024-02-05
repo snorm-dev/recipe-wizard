@@ -33,7 +33,7 @@ type Item struct {
 	UpdatedAt        time.Time
 	GroceryListID    int64
 	RecipeInstanceID int64
-	Ingredient       Ingredient
+	IngredientID     int64
 	Name             string
 	Description      string
 	Amount           float64
