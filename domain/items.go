@@ -3,8 +3,10 @@ package domain
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
+	"github.com/snorman7384/recipe-wizard/domerr"
 	"github.com/snorman7384/recipe-wizard/ingparse"
 	"github.com/snorman7384/recipe-wizard/internal/database"
 )
@@ -65,6 +67,22 @@ func (c *Config) CreateItem(ctx context.Context, groceryList GroceryList, name s
 	}
 
 	return databaseToDomainItem(item), tx.Commit()
+}
+
+func (c *Config) GetItem(ctx context.Context, user User, id int64) (Item, error) {
+	row, err := c.Querier().GetItemAndGroceryList(ctx, id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Item{}, domerr.ErrNotFound
+	}
+	if err != nil {
+		return Item{}, err
+	}
+
+	if user.ID != row.GroceryList.OwnerID {
+		return Item{}, domerr.ErrForbidden
+	}
+
+	return databaseToDomainItem(row.Item), nil
 }
 
 func (c *Config) GetItemsForRecipeInstance(ctx context.Context, recipeInstance RecipeInstance) ([]Item, error) {

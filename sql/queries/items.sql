@@ -6,6 +6,11 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 SELECT * FROM items
 WHERE id = ?;
 
+-- name: GetItemAndGroceryList :one
+SELECT sqlc.embed(it), sqlc.embed(gl) FROM items it
+JOIN grocery_lists gl ON it.grocery_list_id = gl.id
+WHERE it.id = ?;
+
 -- name: GetItemsForRecipeInstance :many
 SELECT * FROM items it 
 WHERE it.recipe_instance_id = ?;

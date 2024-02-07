@@ -110,6 +110,33 @@ func (c *Config) handlePostItem() http.HandlerFunc {
 	}
 }
 
+func (c *Config) handleGetItem() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
+		if !ok {
+			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
+			return
+		}
+
+		idString := chi.URLParam(r, "item_id")
+
+		itemID, err := strconv.ParseInt(idString, 10, 64)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Id is not an integer")
+			return
+		}
+
+		item, err := c.Domain.GetItem(r.Context(), user, itemID)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		respondWithJSON(w, http.StatusOK, domainItemToResponse(item))
+	}
+}
+
 func (c *Config) handleGetItemsForGroceryList() http.HandlerFunc {
 	type response struct {
 		Items  []itemResponse      `json:"items,omitempty"`
