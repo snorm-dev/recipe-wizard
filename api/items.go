@@ -197,3 +197,38 @@ func (c *Config) handleGetItemsForGroceryList() http.HandlerFunc {
 		respondWithJSON(w, http.StatusOK, resBody)
 	}
 }
+
+func (c *Config) handleGetItemsForGroceryListByName() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
+		if !ok {
+			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
+			return
+		}
+
+		idString := chi.URLParam(r, "grocery_list_id")
+
+		glID, err := strconv.ParseInt(idString, 10, 64)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Id is not an integer")
+			return
+		}
+
+		name := chi.URLParam(r, "item_name")
+
+		groceryList, err := c.Domain.GetGroceryList(r.Context(), user, glID)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		itemGroup, err := c.Domain.GetItemGroupForGroceryListByName(r.Context(), groceryList, name)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		respondWithJSON(w, http.StatusOK, domainItemGroupToResponse(itemGroup))
+	}
+}

@@ -57,6 +57,7 @@ func (c *Config) Serve() {
 
 	v1.Get("/grocery-lists/{grocery_list_id}/items", c.middlewareExtractUser(c.handleGetItemsForGroceryList()))
 	v1.Post("/grocery-lists/{grocery_list_id}/items", c.middlewareExtractUser(c.handlePostItem()))
+	v1.Get("/grocery-lists/{grocery_list_id}/items/{item_name}", c.middlewareExtractUser(c.handleGetItemsForGroceryListByName()))
 
 	v1.Get("/items/{item_id}", c.middlewareExtractUser(c.handleGetItem()))
 
