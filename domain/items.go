@@ -116,11 +116,23 @@ func (c *Config) GetItemsForGroceryList(ctx context.Context, groceryList Grocery
 	return items, nil
 }
 
-// TODO
-/* func (c *Config) GetItemsForGroceryListByName(ctx context.Context, groceryList GroceryList, name string) ([]Item, error) {
-	// more complicated sql call
-	return nil, nil
-} */
+func (c *Config) GetItemsForGroceryListByName(ctx context.Context, groceryList GroceryList, name string) ([]Item, error) {
+	dbItems, err := c.Querier().GetItemsForGroceryListByName(ctx, database.GetItemsForGroceryListByNameParams{
+		GroceryListID: groceryList.ID,
+		Name:          name,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]Item, len(dbItems))
+
+	for i, dbItem := range dbItems {
+		items[i] = databaseToDomainItem(dbItem)
+	}
+
+	return items, nil
+}
 
 func (c *Config) GetItemGroupsForGroceryList(ctx context.Context, groceryList GroceryList) ([]ItemGroup, error) {
 	items, err := c.GetItemsForGroceryList(ctx, groceryList)
@@ -164,18 +176,18 @@ func (c *Config) GetItemGroupsForGroceryList(ctx context.Context, groceryList Gr
 	return groups, nil
 }
 
-// TODO
-/* func (c *Config) GetItemGroupForGroceryListByName(ctx context.Context, groceryList GroceryList, name string) ([]IngredientGroup, error) {
-	ingredients, err := c.GetItemsForGroceryListByName(ctx, groceryList, name)
+func (c *Config) GetItemGroupForGroceryListByName(ctx context.Context, groceryList GroceryList, name string) (ItemGroup, error) {
+	items, err := c.GetItemsForGroceryListByName(ctx, groceryList, name)
 	if err != nil {
-		return nil, err
+		return ItemGroup{}, err
 	}
 
-	unitsMap := make(map[ingparse.StandardUnit]IngredientGroup)
-
-	for _, ingredient := range ingredients {
-
+	group := ItemGroup{
+		Name:  name,
+		Items: items,
+		Total: -42, // TODO
+		Units: ingparse.StandardUnitFromString("TODO"),
 	}
 
-	return nil, nil
-} */
+	return group, nil
+}

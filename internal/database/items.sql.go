@@ -303,6 +303,52 @@ func (q *Queries) GetItemsForGroceryList(ctx context.Context, groceryListID int6
 	return items, nil
 }
 
+const getItemsForGroceryListByName = `-- name: GetItemsForGroceryListByName :many
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units FROM items it 
+WHERE it.grocery_list_id = ? AND name = ?
+`
+
+type GetItemsForGroceryListByNameParams struct {
+	GroceryListID int64
+	Name          string
+}
+
+func (q *Queries) GetItemsForGroceryListByName(ctx context.Context, arg GetItemsForGroceryListByNameParams) ([]Item, error) {
+	rows, err := q.db.QueryContext(ctx, getItemsForGroceryListByName, arg.GroceryListID, arg.Name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.GroceryListID,
+			&i.RecipeInstanceID,
+			&i.IngredientID,
+			&i.Name,
+			&i.Description,
+			&i.Amount,
+			&i.Units,
+			&i.StandardAmount,
+			&i.StandardUnits,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getItemsForRecipeInstance = `-- name: GetItemsForRecipeInstance :many
 SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units FROM items it 
 WHERE it.recipe_instance_id = ?

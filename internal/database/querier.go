@@ -28,6 +28,7 @@ type Querier interface {
 	GetItem(ctx context.Context, id int64) (Item, error)
 	GetItemAndGroceryList(ctx context.Context, id int64) (GetItemAndGroceryListRow, error)
 	GetItemsForGroceryList(ctx context.Context, groceryListID int64) ([]Item, error)
+	GetItemsForGroceryListByName(ctx context.Context, arg GetItemsForGroceryListByNameParams) ([]Item, error)
 	GetItemsForRecipeInstance(ctx context.Context, recipeInstanceID sql.NullInt64) ([]Item, error)
 	GetRecipe(ctx context.Context, id int64) (Recipe, error)
 	GetRecipeInstance(ctx context.Context, id int64) (RecipeInstance, error)

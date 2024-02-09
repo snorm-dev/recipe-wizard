@@ -33,3 +33,7 @@ WHERE it.grocery_list_id = ?;
 SELECT sqlc.embed(it), sqlc.embed(i) FROM items it
 LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.grocery_list_id = ?;
+
+-- name: GetItemsForGroceryListByName :many
+SELECT * FROM items it 
+WHERE it.grocery_list_id = ? AND name = ?;
