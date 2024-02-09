@@ -140,37 +140,28 @@ func (c *Config) GetItemGroupsForGroceryList(ctx context.Context, groceryList Gr
 		return nil, err
 	}
 
-	totalsMap := make(map[string]map[ingparse.StandardUnit]ItemGroup)
+	groupMap := make(map[string]ItemGroup)
 
 	for _, it := range items {
-
 		name := it.Name
-		if _, ok := totalsMap[name]; !ok {
-			totalsMap[name] = make(map[ingparse.StandardUnit]ItemGroup)
-		}
-
-		units := it.StandardUnits
-		if entry, ok := totalsMap[name][units]; !ok {
-			totalsMap[name][units] = ItemGroup{
-				Name:  name,
-				Units: units,
-				Total: it.StandardAmount,
-				Items: append(make([]Item, 0), it),
+		entry, ok := groupMap[name]
+		if !ok {
+			entry = ItemGroup{
+				Name:   name,
+				Totals: make(map[ingparse.StandardUnit]float64),
+				Items:  make([]Item, 0),
 			}
-		} else {
-			entry.Total += it.StandardAmount
-			entry.Items = append(entry.Items, it)
-			totalsMap[name][units] = entry
 		}
 
+		entry.Totals[it.StandardUnits] += it.StandardAmount
+		entry.Items = append(entry.Items, it)
+		groupMap[name] = entry
 	}
 
 	groups := make([]ItemGroup, 0)
 
-	for _, unitsMap := range totalsMap {
-		for _, group := range unitsMap {
-			groups = append(groups, group)
-		}
+	for _, group := range groupMap {
+		groups = append(groups, group)
 	}
 
 	return groups, nil
@@ -181,12 +172,16 @@ func (c *Config) GetItemGroupForGroceryListByName(ctx context.Context, groceryLi
 	if err != nil {
 		return ItemGroup{}, err
 	}
+	totals := make(map[ingparse.StandardUnit]float64)
+
+	for _, item := range items {
+		totals[item.StandardUnits] += item.StandardAmount
+	}
 
 	group := ItemGroup{
-		Name:  name,
-		Items: items,
-		Total: -42, // TODO
-		Units: ingparse.StandardUnitFromString("TODO"),
+		Name:   name,
+		Items:  items,
+		Totals: totals,
 	}
 
 	return group, nil

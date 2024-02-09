@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/snorman7384/recipe-wizard/domain"
+	"github.com/snorman7384/recipe-wizard/ingparse"
 )
 
 type itemResponse struct {
@@ -23,10 +24,9 @@ type itemResponse struct {
 }
 
 type itemGroupResponse struct {
-	Name  string         `json:"name"`
-	Total float64        `json:"total"`
-	Units string         `json:"units"`
-	Items []itemResponse `json:"items"`
+	Name   string                            `json:"name"`
+	Totals map[ingparse.StandardUnit]float64 `json:"totals,omitempty"`
+	Items  []itemResponse                    `json:"items,omitempty"`
 }
 
 func domainItemToResponse(it domain.Item) itemResponse {
@@ -54,10 +54,9 @@ func domainItemGroupToResponse(ig domain.ItemGroup) itemGroupResponse {
 		items[i] = domainItemToResponse(it)
 	}
 	return itemGroupResponse{
-		Name:  ig.Name,
-		Total: ig.Total,
-		Units: ig.Units.String(),
-		Items: items,
+		Name:   ig.Name,
+		Totals: ig.Totals,
+		Items:  items,
 	}
 }
 
