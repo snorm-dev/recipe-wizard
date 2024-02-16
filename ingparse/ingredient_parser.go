@@ -38,6 +38,10 @@ func (u StandardUnit) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+func (u StandardUnit) MarshalText() ([]byte, error) {
+	return []byte(u.String()), nil
+}
+
 func StandardUnitFromString(s string) StandardUnit {
 	if s == "fl. oz." {
 		return FluidOunce
