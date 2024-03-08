@@ -36,6 +36,7 @@ type Querier interface {
 	GetRecipesForUser(ctx context.Context, ownerID int64) ([]Recipe, error)
 	GetUser(ctx context.Context, id int64) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
+	SetIsComplete(ctx context.Context, arg SetIsCompleteParams) error
 }
 
 var _ Querier = (*Queries)(nil)

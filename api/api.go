@@ -60,6 +60,7 @@ func (c *Config) Serve() {
 	v1.Get("/grocery-lists/{grocery_list_id}/items/{item_name}", c.middlewareExtractUser(c.handleGetItemsForGroceryListByName()))
 
 	v1.Get("/items/{item_id}", c.middlewareExtractUser(c.handleGetItem()))
+	v1.Put("/items/{item_id}/status", c.middlewareExtractUser(c.handleMarkItemStatus()))
 
 	v1.Post("/users", c.handlePostUser())
 	v1.Post("/login", c.handleLogin())

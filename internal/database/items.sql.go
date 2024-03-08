@@ -397,3 +397,20 @@ func (q *Queries) GetItemsForRecipeInstance(ctx context.Context, recipeInstanceI
 	}
 	return items, nil
 }
+
+const setIsComplete = `-- name: SetIsComplete :exec
+UPDATE items
+SET updated_at = ?, is_complete = ?
+WHERE id = ?
+`
+
+type SetIsCompleteParams struct {
+	UpdatedAt  time.Time
+	IsComplete bool
+	ID         int64
+}
+
+func (q *Queries) SetIsComplete(ctx context.Context, arg SetIsCompleteParams) error {
+	_, err := q.db.ExecContext(ctx, setIsComplete, arg.UpdatedAt, arg.IsComplete, arg.ID)
+	return err
+}

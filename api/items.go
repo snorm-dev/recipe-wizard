@@ -233,3 +233,53 @@ func (c *Config) handleGetItemsForGroceryListByName() http.HandlerFunc {
 		respondWithJSON(w, http.StatusOK, domainItemGroupToResponse(itemGroup))
 	}
 }
+
+func (c *Config) handleMarkItemStatus() http.HandlerFunc {
+	type request struct {
+		Status string `json:"status"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
+		if !ok {
+			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
+			return
+		}
+
+		reqBody := request{}
+
+		err := json.NewDecoder(r.Body).Decode(&reqBody)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		status, err := domain.ItemStatusFromString(reqBody.Status)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		idString := chi.URLParam(r, "item_id")
+
+		itemID, err := strconv.ParseInt(idString, 10, 64)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Id is not an integer")
+			return
+		}
+
+		item, err := c.Domain.GetItem(r.Context(), user, itemID)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		item, err = c.Domain.MarkItemStatus(r.Context(), item, status)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		respondWithJSON(w, http.StatusOK, domainItemToResponse(item))
+	}
+}
