@@ -43,6 +43,7 @@ type Item struct {
 	Units            string
 	StandardAmount   float64
 	StandardUnits    string
+	IsComplete       bool
 }
 
 type Recipe struct {

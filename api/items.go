@@ -21,6 +21,7 @@ type itemResponse struct {
 	Name             string          `json:"name"`
 	Description      string          `json:"description,omitempty"`
 	Measure          measureResponse `json:"measure"`
+	Status           string          `json:"status"`
 }
 
 type itemGroupResponse struct {
@@ -45,6 +46,7 @@ func domainItemToResponse(it domain.Item) itemResponse {
 			StandardAmount: it.StandardAmount,
 			StandardUnits:  it.StandardUnits.String(),
 		},
+		Status: it.Status.String(),
 	}
 }
 

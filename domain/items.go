@@ -12,6 +12,12 @@ import (
 )
 
 func databaseToDomainItem(it database.Item) Item {
+	var status ItemStatus
+	if it.IsComplete {
+		status = Complete
+	} else {
+		status = Incomplete
+	}
 	return Item{
 		ID:               it.ID,
 		CreatedAt:        it.CreatedAt,
@@ -25,6 +31,7 @@ func databaseToDomainItem(it database.Item) Item {
 		Units:            it.Units,
 		StandardAmount:   it.StandardAmount,
 		StandardUnits:    ingparse.StandardUnitFromString(it.StandardUnits),
+		Status:           status,
 	}
 }
 
