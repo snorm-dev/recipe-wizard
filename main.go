@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	"github.com/joho/godotenv"
 	"github.com/snorman7384/recipe-wizard/api"
 	"github.com/snorman7384/recipe-wizard/domain"
 	"github.com/snorman7384/recipe-wizard/ingparse"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 func main() {
