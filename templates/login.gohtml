@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Login - Recipe Wizard</title>
+</head>
+
+<body>
+	<h1>Recipe Wizard</h1>
+	<h2>Login</h2>
+	<form action="/login" method="POST">
+		<label for="username">Username</label>
+		<input id="username" name="username" type="text">
+		<label for="password">Password</label>
+		<input id="password" name="password" type="password">
+		<input type="submit">
+	</form>
+	{{if .PreviousError}}<p>ERROR</p>{{end}}
+</body>
+
+</html>
