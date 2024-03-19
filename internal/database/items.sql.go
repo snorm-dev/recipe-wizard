@@ -226,6 +226,42 @@ func (q *Queries) GetItem(ctx context.Context, id int64) (Item, error) {
 	return i, err
 }
 
+const getItemAndGroceryList = `-- name: GetItemAndGroceryList :one
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, gl.id, gl.created_at, gl.updated_at, gl.name, gl.owner_id FROM items it
+JOIN grocery_lists gl ON it.grocery_list_id = gl.id
+WHERE it.id = ?
+`
+
+type GetItemAndGroceryListRow struct {
+	Item        Item
+	GroceryList GroceryList
+}
+
+func (q *Queries) GetItemAndGroceryList(ctx context.Context, id int64) (GetItemAndGroceryListRow, error) {
+	row := q.db.QueryRowContext(ctx, getItemAndGroceryList, id)
+	var i GetItemAndGroceryListRow
+	err := row.Scan(
+		&i.Item.ID,
+		&i.Item.CreatedAt,
+		&i.Item.UpdatedAt,
+		&i.Item.GroceryListID,
+		&i.Item.RecipeInstanceID,
+		&i.Item.IngredientID,
+		&i.Item.Name,
+		&i.Item.Description,
+		&i.Item.Amount,
+		&i.Item.Units,
+		&i.Item.StandardAmount,
+		&i.Item.StandardUnits,
+		&i.GroceryList.ID,
+		&i.GroceryList.CreatedAt,
+		&i.GroceryList.UpdatedAt,
+		&i.GroceryList.Name,
+		&i.GroceryList.OwnerID,
+	)
+	return i, err
+}
+
 const getItemsForGroceryList = `-- name: GetItemsForGroceryList :many
 SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units FROM items it 
 WHERE it.grocery_list_id = ?
@@ -233,6 +269,52 @@ WHERE it.grocery_list_id = ?
 
 func (q *Queries) GetItemsForGroceryList(ctx context.Context, groceryListID int64) ([]Item, error) {
 	rows, err := q.db.QueryContext(ctx, getItemsForGroceryList, groceryListID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.GroceryListID,
+			&i.RecipeInstanceID,
+			&i.IngredientID,
+			&i.Name,
+			&i.Description,
+			&i.Amount,
+			&i.Units,
+			&i.StandardAmount,
+			&i.StandardUnits,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getItemsForGroceryListByName = `-- name: GetItemsForGroceryListByName :many
+SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units FROM items it 
+WHERE it.grocery_list_id = ? AND name = ?
+`
+
+type GetItemsForGroceryListByNameParams struct {
+	GroceryListID int64
+	Name          string
+}
+
+func (q *Queries) GetItemsForGroceryListByName(ctx context.Context, arg GetItemsForGroceryListByNameParams) ([]Item, error) {
+	rows, err := q.db.QueryContext(ctx, getItemsForGroceryListByName, arg.GroceryListID, arg.Name)
 	if err != nil {
 		return nil, err
 	}

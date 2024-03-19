@@ -1,6 +1,7 @@
 package ingparse
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"strings"
@@ -28,6 +29,17 @@ func (u StandardUnit) String() string {
 		return "whole"
 	}
 	return "<error>"
+}
+
+func (u StandardUnit) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(u.String())
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
+}
+
+func (u StandardUnit) MarshalText() ([]byte, error) {
+	return []byte(u.String()), nil
 }
 
 func StandardUnitFromString(s string) StandardUnit {

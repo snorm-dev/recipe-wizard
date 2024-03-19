@@ -33,7 +33,7 @@ type Item struct {
 	UpdatedAt        time.Time
 	GroceryListID    int64
 	RecipeInstanceID int64
-	Ingredient       Ingredient
+	IngredientID     int64
 	Name             string
 	Description      string
 	Amount           float64
@@ -74,8 +74,7 @@ type User struct {
 }
 
 type ItemGroup struct {
-	Name  string
-	Total float64
-	Units ingparse.StandardUnit
-	Items []Item
+	Name   string
+	Totals map[ingparse.StandardUnit]float64
+	Items  []Item
 }
