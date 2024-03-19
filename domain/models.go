@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"bytes"
+	"errors"
 	"time"
 
 	"github.com/snorman7384/recipe-wizard/ingparse"
@@ -40,6 +42,7 @@ type Item struct {
 	Units            string
 	StandardAmount   float64
 	StandardUnits    ingparse.StandardUnit
+	Status           ItemStatus
 }
 
 type Recipe struct {
@@ -77,4 +80,43 @@ type ItemGroup struct {
 	Name   string
 	Totals map[ingparse.StandardUnit]float64
 	Items  []Item
+}
+
+type ItemStatus int
+
+const (
+	_ ItemStatus = iota
+	Incomplete
+	Complete
+)
+
+func (s ItemStatus) String() string {
+	if s == Incomplete {
+		return "incomplete"
+	}
+	if s == Complete {
+		return "complete"
+	}
+	return "<error>"
+}
+
+func (s ItemStatus) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(s.String())
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
+}
+
+func (s ItemStatus) MarshalText() ([]byte, error) {
+	return []byte(s.String()), nil
+}
+
+func ItemStatusFromString(s string) (ItemStatus, error) {
+	if s == "incomplete" {
+		return Incomplete, nil
+	}
+	if s == "complete" {
+		return Complete, nil
+	}
+	return 0, errors.New("invalid status string")
 }

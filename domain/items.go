@@ -12,6 +12,12 @@ import (
 )
 
 func databaseToDomainItem(it database.Item) Item {
+	var status ItemStatus
+	if it.IsComplete {
+		status = Complete
+	} else {
+		status = Incomplete
+	}
 	return Item{
 		ID:               it.ID,
 		CreatedAt:        it.CreatedAt,
@@ -25,6 +31,7 @@ func databaseToDomainItem(it database.Item) Item {
 		Units:            it.Units,
 		StandardAmount:   it.StandardAmount,
 		StandardUnits:    ingparse.StandardUnitFromString(it.StandardUnits),
+		Status:           status,
 	}
 }
 
@@ -185,4 +192,26 @@ func (c *Config) GetItemGroupForGroceryListByName(ctx context.Context, groceryLi
 	}
 
 	return group, nil
+}
+
+func (c *Config) MarkItemStatus(ctx context.Context, item Item, status ItemStatus) (Item, error) {
+	if item.Status == status {
+		return item, nil
+	}
+
+	now := time.Now()
+	isComplete := status == Complete
+
+	err := c.Querier().SetIsComplete(ctx, database.SetIsCompleteParams{
+		UpdatedAt:  now,
+		IsComplete: isComplete,
+		ID:         item.ID,
+	})
+	if err != nil {
+		return Item{}, err
+	}
+
+	item.Status = status
+
+	return item, nil
 }

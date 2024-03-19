@@ -37,3 +37,8 @@ WHERE it.grocery_list_id = ?;
 -- name: GetItemsForGroceryListByName :many
 SELECT * FROM items it 
 WHERE it.grocery_list_id = ? AND name = ?;
+
+-- name: SetIsComplete :exec
+UPDATE items
+SET updated_at = ?, is_complete = ?
+WHERE id = ?;
