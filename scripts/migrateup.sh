@@ -2,6 +2,5 @@ if [ -f .env ]; then
     source .env
 fi
 
-cd sql/schema
+./scripts/libsql-goose up
 
-goose sqlite3 $DATABASE_URL up
