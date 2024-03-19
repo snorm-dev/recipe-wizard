@@ -4,4 +4,4 @@ fi
 
 cd sql/schema
 
-goose mysql $DATABASE_URL down
+goose sqlite3 $DATABASE_URL down

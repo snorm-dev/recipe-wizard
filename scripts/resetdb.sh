@@ -4,4 +4,4 @@ fi
 
 cd sql/schema
 
-goose mysql $DATABASE_URL reset
+goose sqlite3 $DATABASE_URL reset

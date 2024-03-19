@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	"github.com/joho/godotenv"
 	"github.com/snorman7384/recipe-wizard/api"
 	"github.com/snorman7384/recipe-wizard/domain"
@@ -31,7 +31,7 @@ func main() {
 		log.Fatal("Could not load database url")
 	}
 
-	db, err := sql.Open("mysql", dbUrl)
+	db, err := sql.Open("libsql", dbUrl)
 
 	if err != nil {
 		log.Fatal("Could not open database connection")

@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-ALTER TABLE recipes ADD COLUMN owner_id BIGINT NOT NULL DEFAULT -1;
+ALTER TABLE recipes ADD COLUMN owner_id INTEGER NOT NULL DEFAULT -1;
 -- +goose StatementEnd
 
 -- +goose Down
