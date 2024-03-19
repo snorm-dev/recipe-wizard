@@ -1,11 +1,11 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE grocery_lists (
-	id BIGINT PRIMARY KEY AUTO_INCREMENT,
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	created_at TIMESTAMP NOT NULL,
 	updated_at TIMESTAMP NOT NULL,
 	name TEXT NOT NULL,
-	owner_id BIGINT NOT NULL
+	owner_id INTEGER NOT NULL
 );
 -- +goose StatementEnd
 

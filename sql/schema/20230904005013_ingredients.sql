@@ -1,12 +1,12 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE ingredients (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
-    recipe_id BIGINT NOT NULL
+    recipe_id INTEGER NOT NULL
 );
 -- +goose StatementEnd
 
