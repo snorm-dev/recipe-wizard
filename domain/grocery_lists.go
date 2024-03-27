@@ -22,17 +22,9 @@ func databaseToDomainGroceryList(dbGroceryList database.GroceryList) GroceryList
 
 func (c *Config) CreateGroceryList(ctx context.Context, user User, name string) (GroceryList, error) {
 
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return GroceryList{}, err
-	}
-	defer tx.Rollback()
-
-	qtx := c.Querier().WithTx(tx)
-
 	now := time.Now()
 
-	result, err := qtx.CreateGroceryList(ctx, database.CreateGroceryListParams{
+	groceryList, err := c.Querier().CreateGroceryList(ctx, database.CreateGroceryListParams{
 		CreatedAt: now,
 		UpdatedAt: now,
 		Name:      name,
@@ -42,17 +34,7 @@ func (c *Config) CreateGroceryList(ctx context.Context, user User, name string) 
 		return GroceryList{}, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return GroceryList{}, err
-	}
-
-	groceryList, err := qtx.GetGroceryList(ctx, id)
-	if err != nil {
-		return GroceryList{}, err
-	}
-
-	return databaseToDomainGroceryList(groceryList), tx.Commit()
+	return databaseToDomainGroceryList(groceryList), nil
 }
 
 func (c *Config) GetGroceryList(ctx context.Context, user User, id int64) (GroceryList, error) {

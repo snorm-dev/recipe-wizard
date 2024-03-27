@@ -1,6 +1,6 @@
--- name: CreateGroceryList :execresult
+-- name: CreateGroceryList :one
 INSERT INTO grocery_lists (created_at, updated_at, name, owner_id)
-VALUES (?, ?, ?, ?);
+VALUES (?, ?, ?, ?) RETURNING *;
 
 -- name: GetGroceryList :one
 SELECT * FROM grocery_lists

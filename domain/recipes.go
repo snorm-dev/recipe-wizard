@@ -62,7 +62,7 @@ func (c *Config) CreateRecipeFromUrl(ctx context.Context, user User, url string)
 
 	qtx := c.Querier().WithTx(tx)
 
-	result, err := qtx.CreateRecipe(ctx, database.CreateRecipeParams{
+	recipe, err := qtx.CreateRecipe(ctx, database.CreateRecipeParams{
 		CreatedAt:   now,
 		UpdatedAt:   now,
 		Url:         sqlUrl,
@@ -73,16 +73,6 @@ func (c *Config) CreateRecipeFromUrl(ctx context.Context, user User, url string)
 		TotalTime:   totalTime,
 		OwnerID:     user.ID,
 	})
-	if err != nil {
-		return Recipe{}, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return Recipe{}, err
-	}
-
-	recipe, err := qtx.GetRecipe(ctx, id)
 	if err != nil {
 		return Recipe{}, err
 	}
@@ -111,7 +101,7 @@ func (c *Config) CreateRecipeFromUrl(ctx context.Context, user User, url string)
 					Units:          ingredient.Measure.OriginalUnits,
 					StandardAmount: ingredient.Measure.StandardAmount,
 					StandardUnits:  ingredient.Measure.StandardUnits.String(),
-					RecipeID:       id,
+					RecipeID:       recipe.ID,
 					Description:    sql.NullString{String: ingredient.Description, Valid: ingredient.Description != ""},
 				})
 				if err != nil {

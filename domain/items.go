@@ -38,15 +38,7 @@ func databaseToDomainItem(it database.Item) Item {
 func (c *Config) CreateItem(ctx context.Context, groceryList GroceryList, name string, description string, amount float64, units string) (Item, error) {
 	now := time.Now()
 
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return Item{}, err
-	}
-	defer tx.Rollback()
-
-	qtx := c.Querier().WithTx(tx)
-
-	result, err := qtx.CreateItem(ctx, database.CreateItemParams{
+	item, err := c.Querier().CreateItem(ctx, database.CreateItemParams{
 		CreatedAt:        now,
 		UpdatedAt:        now,
 		IngredientID:     sql.NullInt64{},
@@ -63,17 +55,7 @@ func (c *Config) CreateItem(ctx context.Context, groceryList GroceryList, name s
 		return Item{}, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return Item{}, err
-	}
-
-	item, err := qtx.GetItem(ctx, id)
-	if err != nil {
-		return Item{}, err
-	}
-
-	return databaseToDomainItem(item), tx.Commit()
+	return databaseToDomainItem(item), nil
 }
 
 func (c *Config) GetItem(ctx context.Context, user User, id int64) (Item, error) {

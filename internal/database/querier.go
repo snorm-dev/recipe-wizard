@@ -10,12 +10,12 @@ import (
 )
 
 type Querier interface {
-	CreateGroceryList(ctx context.Context, arg CreateGroceryListParams) (sql.Result, error)
-	CreateIngredient(ctx context.Context, arg CreateIngredientParams) (sql.Result, error)
-	CreateItem(ctx context.Context, arg CreateItemParams) (sql.Result, error)
-	CreateRecipe(ctx context.Context, arg CreateRecipeParams) (sql.Result, error)
-	CreateRecipeInstance(ctx context.Context, arg CreateRecipeInstanceParams) (sql.Result, error)
-	CreateUser(ctx context.Context, arg CreateUserParams) (sql.Result, error)
+	CreateGroceryList(ctx context.Context, arg CreateGroceryListParams) (GroceryList, error)
+	CreateIngredient(ctx context.Context, arg CreateIngredientParams) (Ingredient, error)
+	CreateItem(ctx context.Context, arg CreateItemParams) (Item, error)
+	CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Recipe, error)
+	CreateRecipeInstance(ctx context.Context, arg CreateRecipeInstanceParams) (RecipeInstance, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	GetExtendedItem(ctx context.Context, id int64) (GetExtendedItemRow, error)
 	GetExtendedItemsForGroceryList(ctx context.Context, groceryListID int64) ([]GetExtendedItemsForGroceryListRow, error)
 	GetExtendedItemsForRecipeInstance(ctx context.Context, recipeInstanceID sql.NullInt64) ([]GetExtendedItemsForRecipeInstanceRow, error)

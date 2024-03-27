@@ -1,6 +1,6 @@
--- name: CreateRecipeInstance :execresult
+-- name: CreateRecipeInstance :one
 INSERT INTO recipe_instances (created_at, updated_at, grocery_list_id, recipe_id)
-VALUES (?, ?, ?, ?);
+VALUES (?, ?, ?, ?) RETURNING *;
 
 -- name: GetRecipeInstance :one
 SELECT * FROM recipe_instances

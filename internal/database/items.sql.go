@@ -11,9 +11,9 @@ import (
 	"time"
 )
 
-const createItem = `-- name: CreateItem :execresult
+const createItem = `-- name: CreateItem :one
 INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id, name, description, amount, units, standard_amount, standard_units)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete
 `
 
 type CreateItemParams struct {
@@ -30,8 +30,8 @@ type CreateItemParams struct {
 	StandardUnits    string
 }
 
-func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createItem,
+func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, error) {
+	row := q.db.QueryRowContext(ctx, createItem,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.IngredientID,
@@ -44,6 +44,23 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (sql.Res
 		arg.StandardAmount,
 		arg.StandardUnits,
 	)
+	var i Item
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.GroceryListID,
+		&i.RecipeInstanceID,
+		&i.IngredientID,
+		&i.Name,
+		&i.Description,
+		&i.Amount,
+		&i.Units,
+		&i.StandardAmount,
+		&i.StandardUnits,
+		&i.IsComplete,
+	)
+	return i, err
 }
 
 const getExtendedItem = `-- name: GetExtendedItem :one

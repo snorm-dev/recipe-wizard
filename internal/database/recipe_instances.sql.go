@@ -7,13 +7,12 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
 
-const createRecipeInstance = `-- name: CreateRecipeInstance :execresult
+const createRecipeInstance = `-- name: CreateRecipeInstance :one
 INSERT INTO recipe_instances (created_at, updated_at, grocery_list_id, recipe_id)
-VALUES (?, ?, ?, ?)
+VALUES (?, ?, ?, ?) RETURNING id, created_at, updated_at, grocery_list_id, recipe_id
 `
 
 type CreateRecipeInstanceParams struct {
@@ -23,13 +22,22 @@ type CreateRecipeInstanceParams struct {
 	RecipeID      int64
 }
 
-func (q *Queries) CreateRecipeInstance(ctx context.Context, arg CreateRecipeInstanceParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createRecipeInstance,
+func (q *Queries) CreateRecipeInstance(ctx context.Context, arg CreateRecipeInstanceParams) (RecipeInstance, error) {
+	row := q.db.QueryRowContext(ctx, createRecipeInstance,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.GroceryListID,
 		arg.RecipeID,
 	)
+	var i RecipeInstance
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.GroceryListID,
+		&i.RecipeID,
+	)
+	return i, err
 }
 
 const getExtendedRecipeInstance = `-- name: GetExtendedRecipeInstance :one

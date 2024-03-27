@@ -29,7 +29,7 @@ func (c *Config) CreateRecipeInstance(ctx context.Context, user User, groceryLis
 
 	now := time.Now()
 
-	result, err := qtx.CreateRecipeInstance(ctx, database.CreateRecipeInstanceParams{
+	recipeInstance, err := qtx.CreateRecipeInstance(ctx, database.CreateRecipeInstanceParams{
 		CreatedAt:     now,
 		UpdatedAt:     now,
 		RecipeID:      recipeID,
@@ -39,12 +39,7 @@ func (c *Config) CreateRecipeInstance(ctx context.Context, user User, groceryLis
 		return RecipeInstance{}, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return RecipeInstance{}, err
-	}
-
-	row, err := qtx.GetExtendedRecipeInstance(ctx, id)
+	recipe, err := qtx.GetRecipe(ctx, recipeID)
 	if err != nil {
 		return RecipeInstance{}, err
 	}
@@ -63,7 +58,7 @@ func (c *Config) CreateRecipeInstance(ctx context.Context, user User, groceryLis
 			UpdatedAt:        now,
 			IngredientID:     sql.NullInt64{Int64: ingredient.ID, Valid: true},
 			GroceryListID:    groceryList.ID,
-			RecipeInstanceID: sql.NullInt64{Int64: row.RecipeInstance.ID, Valid: true},
+			RecipeInstanceID: sql.NullInt64{Int64: recipeInstance.ID, Valid: true},
 			Name:             ingredient.Name,
 			Description:      ingredient.Description,
 			Amount:           ingredient.Amount,
@@ -76,7 +71,7 @@ func (c *Config) CreateRecipeInstance(ctx context.Context, user User, groceryLis
 		}
 	}
 
-	return databaseToDomainRecipeInstance(row.RecipeInstance, databaseToDomainRecipe(row.Recipe)), tx.Commit()
+	return databaseToDomainRecipeInstance(recipeInstance, databaseToDomainRecipe(recipe)), tx.Commit()
 }
 
 func (c *Config) GetRecipeInstancesInGroceryList(ctx context.Context, groceryList GroceryList) ([]RecipeInstance, error) {
