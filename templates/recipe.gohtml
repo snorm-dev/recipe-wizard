@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Recipe Wizard</title>
+	<link href="/static/index.css" rel="stylesheet" type="text/css">
+	<script src="/static/index.js" type="application/javascript" defer></script>
+</head>
+
+<body>
+	<header>
+		<h1>Recipe Wizard</h1>
+		<nav class="navbar">
+			<a class="navbar-item" href="/">Home</a>
+			<a class="navbar-item" href="/recipes">Recipes</a>
+			<a class="navbar-item" href="/grocery-lists">Grocery Lists</a>
+		</nav>
+	</header>
+	<div class="recipe-info">
+		<h3>{{ .Name }}</h3>
+		<p>Url: <a href="{{ .Url }}">{{ .Url }}</a></p>
+		<p>
+			{{ .Description }}
+		</p>
+	</div>
+	<ul>
+		{{range .Ingredients}}
+		<li class="ingredient-card">
+			{{ .Name }}
+		</li>
+		{{else}}
+		<p>No Ingredients</p>
+		{{end}}
+	</ul>
+</body>
+
+
+</html>

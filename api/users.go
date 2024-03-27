@@ -215,3 +215,53 @@ func (c *Config) middlewareExtractUser(next http.Handler) http.HandlerFunc {
 		next.ServeHTTP(w, r)
 	}
 }
+
+func (c *Config) middlewareExtractUserFromCookie(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("userAccessToken")
+		if err != nil {
+			fmt.Println("bad cookie:", err.Error())
+			http.Redirect(w, r, "/login", 302)
+			return
+		}
+		if cookie.Valid() != nil {
+			fmt.Println("invalid cookie")
+			http.Redirect(w, r, "/login", 302)
+			return
+		}
+
+		token, err := jwt.Parse(cookie.Value, func(t *jwt.Token) (interface{}, error) {
+			return []byte(c.JwtSecret), nil
+		})
+		if err != nil {
+			fmt.Println("couln't parse JWT")
+			http.Redirect(w, r, "/login", 302)
+			return
+		}
+
+		userIdString, err := token.Claims.GetSubject()
+		if err != nil {
+			fmt.Println("no subject")
+			http.Redirect(w, r, "/login", 302)
+			return
+		}
+
+		userId, err := strconv.ParseInt(userIdString, 10, 64)
+		if err != nil {
+			fmt.Println("id not number")
+			http.Redirect(w, r, "/login", 302)
+			return
+		}
+
+		user, err := c.Domain.GetUser(r.Context(), userId)
+		if err != nil {
+			respondWithDomainError(w, err) // TODO:
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), ContextUserKey, user)
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
+	}
+}

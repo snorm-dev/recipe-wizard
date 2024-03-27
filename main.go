@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"text/template"
 
 	"github.com/joho/godotenv"
 	"github.com/snorman7384/recipe-wizard/api"
@@ -43,6 +44,11 @@ func main() {
 		log.Fatal("Could not locate JWT secret")
 	}
 
+	templates, err := template.New("").ParseGlob("templates/*")
+	if err != nil {
+		log.Fatal("Could not parse template files", err.Error())
+	}
+
 	c := api.Config{
 		Domain: domain.Config{
 			DB:               db,
@@ -50,6 +56,7 @@ func main() {
 		},
 		JwtSecret: []byte(jwtSecret),
 		Port:      port,
+		Templates: templates,
 	}
 
 	c.Serve()

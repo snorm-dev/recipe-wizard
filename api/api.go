@@ -3,15 +3,20 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"text/template"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/snorman7384/recipe-wizard/domain"
 	"github.com/snorman7384/recipe-wizard/domerr"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type ContextKey string
@@ -22,6 +27,7 @@ type Config struct {
 	Domain    domain.Config
 	JwtSecret []byte
 	Port      string
+	Templates *template.Template
 }
 
 func (c *Config) Serve() {
@@ -35,10 +41,20 @@ func (c *Config) Serve() {
 		MaxAge:           300,
 	}))
 
-	r.Get("/", c.handleIndex())
+	r.Use(func(next http.Handler) http.Handler { return middlewareLogRequest(next) })
+
+	r.Get("/login", c.handleLoginWWW())
+	r.Post("/login", c.handlePostLoginWWW())
+
+	r.Get("/", c.middlewareExtractUserFromCookie(c.handleIndexWWW()))
+	r.Get("/recipes", c.middlewareExtractUserFromCookie(c.handleRecipesWWW()))
+	r.Post("/recipes", c.middlewareExtractUserFromCookie(c.handlePostRecipesWWW()))
+	r.Get("/recipes/{recipe_id}", c.middlewareExtractUserFromCookie(c.handleRecipeWWW()))
+
+	r.Mount("/static", http.StripPrefix("/static", http.FileServer(http.Dir("/home/snorm/dev/recipe-wizard/static"))))
 
 	v1 := chi.NewRouter()
-	r.Mount("/v1", middlewareLogRequest(v1))
+	r.Mount("/v1", v1)
 
 	v1.Get("/ping", c.handlePing())
 
@@ -75,36 +91,149 @@ func (c *Config) Serve() {
 	log.Fatal(server.ListenAndServe())
 }
 
-func (c *Config) handleIndex() http.HandlerFunc {
+func (c *Config) handleIndexWWW() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		myPage := `
-		<!DOCTYPE html>
-		<html>
-		<body>
+		err := c.Templates.ExecuteTemplate(w, "index.gohtml", nil)
+		if err != nil {
+			log.Println("Could not respond to index request: ", err)
+			w.WriteHeader(500)
+		}
+	}
+}
 
-		<h1>Recipe Wizard</h1>
-		<p>The API is available beginning with path /v1 </p>
-		<p>Use the following endpoints:</p>
-		<ul>
-		<li>POST /v1/users</li>
-		<li>POST /v1/login</li>
-		<li>GET/POST /v1/recipes</li>
-		<li>GET /v1/recipes{id}</li>
-		<li>GET/POST /v1/recipes/{id}/ingredients</li>
-		<li>GET/POST /v1/grocery-lists</li>
-		<li>GET /v1/grocery-lists{id}</li>
-		<li>GET/POST /v1/grocery-lists/recipes</li>
-		<li>GET /v1/grocery-lists/ingredients</li>
-		</ul>
+func (c *Config) handleRecipesWWW() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
+		if !ok {
+			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
+			return
+		}
 
-		</body>
-		</html>
-		`
-		_, err := w.Write([]byte(myPage))
+		recipes, err := c.Domain.GetRecipesForUser(r.Context(), user)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		err = c.Templates.ExecuteTemplate(w, "recipes.gohtml", recipes)
+		if err != nil {
+			log.Println("Could not respond to index request: ", err)
+			w.WriteHeader(500)
+		}
+	}
+}
+
+func (c *Config) handleRecipeWWW() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
+		if !ok {
+			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
+			return
+		}
+
+		idString := chi.URLParam(r, "recipe_id")
+
+		id, err := strconv.ParseInt(idString, 10, 64)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Id is not an integer")
+			return
+		}
+
+		recipe, err := c.Domain.GetRecipe(r.Context(), user, id)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		ingredients, err := c.Domain.GetIngredientsForRecipe(r.Context(), user, recipe)
+
+		err = c.Templates.ExecuteTemplate(w, "recipe.gohtml", struct {
+			domain.Recipe
+			Ingredients []domain.Ingredient
+		}{
+			Recipe:      recipe,
+			Ingredients: ingredients,
+		})
+		if err != nil {
+			log.Println("Could not respond to index request: ", err)
+			w.WriteHeader(500)
+		}
+	}
+}
+
+func (c *Config) handlePostRecipesWWW() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(ContextUserKey).(domain.User)
+		if !ok {
+			respondWithError(w, http.StatusInternalServerError, "Unable to retrieve user")
+			return
+		}
+
+		url := r.FormValue("url")
+
+		_, err := c.Domain.CreateRecipeFromUrl(r.Context(), user, url)
+		if err != nil {
+			respondWithDomainError(w, err)
+			return
+		}
+
+		http.Redirect(w, r, "/recipes", 302)
+	}
+}
+
+func (c *Config) handleLoginWWW() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		previousError := r.URL.Query().Has("invalid-form")
+		err := c.Templates.ExecuteTemplate(w, "login.gohtml", struct{ PreviousError bool }{PreviousError: previousError})
 
 		if err != nil {
 			log.Println("Could not respond to index request: ", err)
+			w.WriteHeader(500)
 		}
+	}
+}
+
+func (c *Config) handlePostLoginWWW() http.HandlerFunc {
+	jwtDuration := time.Hour * 24
+	return func(w http.ResponseWriter, r *http.Request) {
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+		if username == "" || password == "" {
+			http.Redirect(w, r, "/login?invalid-form", 302)
+			return
+		}
+
+		user, err := c.Domain.GetUserByUsername(r.Context(), username)
+		if err != nil {
+			respondWithDomainError(w, err) // TODO:
+			return
+		}
+
+		if err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password)); err != nil {
+			respondWithError(w, http.StatusUnauthorized, "Incorrect Password") // TODO:
+			return
+		}
+
+		issuedAt := jwt.NewNumericDate(time.Now())
+		expiresAt := jwt.NewNumericDate(issuedAt.Add(jwtDuration))
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+			Issuer:    "recipe-wizard",
+			IssuedAt:  issuedAt,
+			ExpiresAt: expiresAt,
+			Subject:   fmt.Sprint(user.ID),
+		})
+
+		tokenString, err := token.SignedString(c.JwtSecret)
+
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, err.Error()) // TODO:
+			return
+		}
+
+		w.Header().Add("Set-Cookie", fmt.Sprintf("userAccessToken=%s; HttpOnly", tokenString))
+
+		http.Redirect(w, r, "/", 302)
 	}
 }
 

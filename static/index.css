@@ -1,0 +1,36 @@
+h1 {
+	color: red;
+	display: inline;
+	margin: 0 10px;
+	font-family: sans-serif;
+}
+
+header {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.navbar {
+	display: inline-flex;
+	justify-content: space-around;
+}
+
+.navbar-item {
+	text-decoration: none;
+	padding: 0.3em 0.5em;
+	margin: 10px;
+	border-radius: 0.5em;
+	text-wrap: nowrap;
+	background-color: white;
+	color: red;
+	font-size: 20px;
+	font-family: sans-serif;
+	border-color: red;
+	border-width: 0.1em;
+	border-style: solid;
+}
+
+a.navbar-item:hover {
+	background-color: #EEEEEE;
+}
