@@ -23,4 +23,7 @@ go.work
 # Environment variables adn secrets
 .env
 
+# Hot reloading config
+.air.toml
+
 recipe-wizard
