@@ -174,15 +174,15 @@ paths:
   #     operationId: getGroceryList
   #     parameters:
   #     responses:
-  # '/grocery-lists/{grocery_list_id}/recipes':
+  # '/grocery-lists/{grocery_list_id}/meals':
   #   get:
-  #     summary: Get all instanced recipes in the grocery list
-  #     operationId: getRecipeInstancesForGroceryList
+  #     summary: Get all mealsin the grocery list
+  #     operationId: getMealsForGroceryList
   #     parameters:
   #     responses:
   #   post:
-  #     summary: Create a recipe instance of the recipe for the grocery list
-  #     operationId: createRecipeInstanceForGroceryList
+  #     summary: Create a meal of the recipe for the grocery list
+  #     operationId: createMealForGroceryList
   #     parameters:
   #     requestBody:
   #     responses:
