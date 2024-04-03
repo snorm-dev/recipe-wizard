@@ -52,8 +52,8 @@ func (c *Config) Serve() {
 	v1.Get("/grocery-lists", c.middlewareExtractUser(c.handleGetGroceryLists()))
 	v1.Get("/grocery-lists/{grocery_list_id}", c.middlewareExtractUser(c.handleGetGroceryList()))
 
-	v1.Post("/grocery-lists/{grocery_list_id}/recipes", c.middlewareExtractUser(c.handlePostRecipeInGroceryList()))
-	v1.Get("/grocery-lists/{grocery_list_id}/recipes", c.middlewareExtractUser(c.handleGetRecipesInGroceryList()))
+	v1.Post("/grocery-lists/{grocery_list_id}/meals", c.middlewareExtractUser(c.handlePostMealInGroceryList()))
+	v1.Get("/grocery-lists/{grocery_list_id}/meals", c.middlewareExtractUser(c.handleGetMealsInGroceryList()))
 
 	v1.Get("/grocery-lists/{grocery_list_id}/items", c.middlewareExtractUser(c.handleGetItemsForGroceryList()))
 	v1.Post("/grocery-lists/{grocery_list_id}/items", c.middlewareExtractUser(c.handlePostItem()))

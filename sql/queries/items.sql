@@ -1,5 +1,5 @@
 -- name: CreateItem :one
-INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id, name, description, amount, units, standard_amount, standard_units)
+INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, meal_id, name, description, amount, units, standard_amount, standard_units)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;
 
 -- name: GetItem :one
@@ -11,19 +11,19 @@ SELECT sqlc.embed(it), sqlc.embed(gl) FROM items it
 JOIN grocery_lists gl ON it.grocery_list_id = gl.id
 WHERE it.id = ?;
 
--- name: GetItemsForRecipeInstance :many
+-- name: GetItemsForMeal :many
 SELECT * FROM items it 
-WHERE it.recipe_instance_id = ?;
+WHERE it.meal_id = ?;
 
 -- name: GetExtendedItem :one
 SELECT sqlc.embed(it), sqlc.embed(i) FROM items it
 LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.id = ?;
 
--- name: GetExtendedItemsForRecipeInstance :many
+-- name: GetExtendedItemsForMeal :many
 SELECT sqlc.embed(it), sqlc.embed(i) FROM items it
 LEFT JOIN ingredients i ON it.ingredient_id = i.id
-WHERE it.recipe_instance_id = ?;
+WHERE it.meal_id = ?;
 
 -- name: GetItemsForGroceryList :many
 SELECT * FROM items it 

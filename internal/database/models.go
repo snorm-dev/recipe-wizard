@@ -31,19 +31,27 @@ type Ingredient struct {
 }
 
 type Item struct {
-	ID               int64
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	GroceryListID    int64
-	RecipeInstanceID sql.NullInt64
-	IngredientID     sql.NullInt64
-	Name             string
-	Description      sql.NullString
-	Amount           float64
-	Units            string
-	StandardAmount   float64
-	StandardUnits    string
-	IsComplete       bool
+	ID             int64
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	GroceryListID  int64
+	MealID         sql.NullInt64
+	IngredientID   sql.NullInt64
+	Name           string
+	Description    sql.NullString
+	Amount         float64
+	Units          string
+	StandardAmount float64
+	StandardUnits  string
+	IsComplete     bool
+}
+
+type Meal struct {
+	ID            int64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	GroceryListID int64
+	RecipeID      int64
 }
 
 type Recipe struct {
@@ -57,14 +65,6 @@ type Recipe struct {
 	CookTime    sql.NullString
 	TotalTime   sql.NullString
 	OwnerID     int64
-}
-
-type RecipeInstance struct {
-	ID            int64
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	GroceryListID int64
-	RecipeID      int64
 }
 
 type User struct {

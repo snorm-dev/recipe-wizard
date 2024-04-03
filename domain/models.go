@@ -30,19 +30,19 @@ type Ingredient struct {
 }
 
 type Item struct {
-	ID               int64
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	GroceryListID    int64
-	RecipeInstanceID int64
-	IngredientID     int64
-	Name             string
-	Description      string
-	Amount           float64
-	Units            string
-	StandardAmount   float64
-	StandardUnits    ingparse.StandardUnit
-	Status           ItemStatus
+	ID             int64
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	GroceryListID  int64
+	MealID         int64
+	IngredientID   int64
+	Name           string
+	Description    string
+	Amount         float64
+	Units          string
+	StandardAmount float64
+	StandardUnits  ingparse.StandardUnit
+	Status         ItemStatus
 }
 
 type Recipe struct {
@@ -58,7 +58,7 @@ type Recipe struct {
 	OwnerID     int64
 }
 
-type RecipeInstance struct {
+type Meal struct {
 	ID            int64
 	CreatedAt     time.Time
 	UpdatedAt     time.Time

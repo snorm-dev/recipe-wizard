@@ -12,16 +12,16 @@ import (
 )
 
 type itemResponse struct {
-	ID               int64           `json:"id"`
-	CreatedAt        time.Time       `json:"created_at"`
-	UpdatedAt        time.Time       `json:"updated_at"`
-	GroceryListID    int64           `json:"grocery_list_id"`
-	RecipeInstanceID int64           `json:"recipe_instance_id,omitempty"` // 0 is never a sql id, so we can treat 0 as "no recipe instance"
-	IngredientID     int64           `json:"ingredient_id,omitempty"`
-	Name             string          `json:"name"`
-	Description      string          `json:"description,omitempty"`
-	Measure          measureResponse `json:"measure"`
-	Status           string          `json:"status"`
+	ID            int64           `json:"id"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
+	GroceryListID int64           `json:"grocery_list_id"`
+	MealID        int64           `json:"meal_id,omitempty"` // 0 is never a sql id, so we can treat 0 as "no meal"
+	IngredientID  int64           `json:"ingredient_id,omitempty"`
+	Name          string          `json:"name"`
+	Description   string          `json:"description,omitempty"`
+	Measure       measureResponse `json:"measure"`
+	Status        string          `json:"status"`
 }
 
 type itemGroupResponse struct {
@@ -32,14 +32,14 @@ type itemGroupResponse struct {
 
 func domainItemToResponse(it domain.Item) itemResponse {
 	return itemResponse{
-		ID:               it.ID,
-		CreatedAt:        it.CreatedAt,
-		UpdatedAt:        it.UpdatedAt,
-		GroceryListID:    it.GroceryListID,
-		RecipeInstanceID: it.RecipeInstanceID,
-		IngredientID:     it.IngredientID,
-		Name:             it.Name,
-		Description:      it.Description,
+		ID:            it.ID,
+		CreatedAt:     it.CreatedAt,
+		UpdatedAt:     it.UpdatedAt,
+		GroceryListID: it.GroceryListID,
+		MealID:        it.MealID,
+		IngredientID:  it.IngredientID,
+		Name:          it.Name,
+		Description:   it.Description,
 		Measure: measureResponse{
 			OriginalAmount: it.Amount,
 			OriginalUnits:  it.Units,
