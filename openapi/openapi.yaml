@@ -60,13 +60,13 @@ paths:
         required: true
         content:
           application/json:
-            schema: 
+            schema:
               $ref: '#/components/schemas/LoginRequest'
       responses:
-        '200': 
+        '200':
           description: The user was successfully logged in
           content:
-            application/json: 
+            application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
         default:
@@ -432,7 +432,7 @@ components:
           type: string
     LoginResponse:
       type: object
-      required: 
+      required:
         - token
       properties:
         token:
@@ -724,7 +724,7 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT 
+      bearerFormat: JWT
 tags:
   - name: 'Health'
     description: Operations to check the health of the system
