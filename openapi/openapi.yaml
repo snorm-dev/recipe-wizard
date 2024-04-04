@@ -214,28 +214,166 @@ paths:
         default:
           description: Unable to get grocery list
           $ref: '#/components/responses/GeneralError'
-  # '/grocery-lists/{grocery_list_id}/meals':
-  #   get:
-  #     summary: Get all mealsin the grocery list
-  #     operationId: getMealsForGroceryList
-  #     parameters:
-  #     responses:
-  #   post:
-  #     summary: Create a meal of the recipe for the grocery list
-  #     operationId: createMealForGroceryList
-  #     parameters:
-  #     requestBody:
-  #     responses:
-  # '/grocery-lists/{grocery_list_id}/items':
-  #   get:
-  #     summary: Get all items in the grocery list
-  #     operationId: getItemsForGroceryList
-  #     parameters:
-  #     responses:
-  #   post: TODO
-  # '/grocery-lists/{grocery_list_id}/items/{item_name}': TODO
-  # '/items/{item_id}': TODO
-  # '/items/{item_id}/status': TODO
+  '/grocery-lists/{grocery_list_id}/meals':
+    get:
+      tags:
+        - 'Grocery Lists'
+        - 'Meals'
+      summary: Get meals for list.
+      description: Get all meals for a grocery list.
+      operationId: getMealsForGroceryList
+      parameters:
+        - $ref: '#/components/parameters/GroceryListID'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Meal'
+        default:
+          description: Unable to return meals
+          $ref: '#/components/responses/GeneralError'
+    post:
+      tags:
+        - 'Grocery Lists'
+        - 'Meals'
+      description: Create a new meal in a grocery list
+      operationId: createMealForGroceryList
+      parameters:
+        - $ref: '#/components/parameters/GroceryListID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMealRequest'
+      responses:
+        '201':
+          description: The meal was successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meal'
+        default:
+          description: There was an error creating the meal
+          $ref: '#/components/responses/GeneralError'
+  '/grocery-lists/{grocery_list_id}/items':
+    get:
+      tags:
+        - 'Grocery Lists'
+        - 'Items'
+      summary: Get items for list.
+      description: Get all items for a grocery list.
+      operationId: getItemsForGroceryList
+      parameters:
+        - $ref: '#/components/parameters/GroceryListID'
+        - $ref: '#/components/parameters/GroupedItems'
+        - $ref: '#/components/parameters/UngroupedItems'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Items'
+        default:
+          description: Unable to return items
+          $ref: '#/components/responses/GeneralError'
+    post:
+      tags:
+        - 'Grocery Lists'
+        - 'Items'
+      description: Create a new item in a grocery list
+      operationId: createItemForGroceryList
+      parameters:
+        - $ref: '#/components/parameters/GroceryListID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemRequest'
+      responses:
+        '201':
+          description: The item was successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        default:
+          description: There was an error creating the item
+          $ref: '#/components/responses/GeneralError'
+  '/grocery-lists/{grocery_list_id}/items/{item_name}':
+    get:
+      tags:
+        - 'Grocery Lists'
+        - 'Items'
+      description: Get group of items with the given name.
+      operationId: getItemGroupForGroceryListByName
+      parameters:
+        - $ref: '#/components/parameters/GroceryListID'
+        - $ref: '#/components/parameters/ItemName'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemGroup'
+        default:
+          description: Error
+          $ref: '#/components/responses/GeneralError'
+  '/items/{item_id}':
+    get:
+      tags:
+        - 'Items'
+      description: Get item by id
+      operationId: getItem
+      parameters:
+        - $ref: '#/components/parameters/ItemID'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        default:
+          description: Error
+          $ref: '#/components/responses/GeneralError'
+  '/items/{item_id}/status':
+    put:
+      tags:
+        - 'Items'
+      description: Set item status
+      operationId: putItemStatus
+      parameters:
+        - $ref: '#/components/parameters/ItemID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - complete
+                    - incomplete
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Item'
+        default:
+          description: Error
+          $ref: '#/components/responses/GeneralError'
 components:
   schemas:
     CreateUserRequest:
@@ -404,6 +542,114 @@ components:
         owner_id:
           type: integer
           format: int64
+    CreateMealRequest:
+      type: object
+      required: [recipe_id]
+      properties:
+        recipe_id:
+          type: integer
+          format: int64
+    Meal:
+      type: object
+      required: [id, created_at, updated_at, grocery_list_id, recipe_id]
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        grocery_list_id:
+          type: integer
+          format: int64
+        recipe_id:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+    Item:
+      type: object
+      required: [id, created_at, updated_at, name, measure, grocery_list_id, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        name:
+          type: string
+        description:
+          type: string
+        measure:
+          $ref: '#/components/schemas/Measure'
+        grocery_list:
+          type: integer
+          format: int64
+        meal_id:
+          type: integer
+          format: int64
+        ingredient_id:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+            - complete
+            - incomplete
+    CreateItemRequest:
+      type: object
+      required: [name, amount, units]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+          format: double
+        units:
+          type: string
+    ItemGroup:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        totals:
+          type: object
+          required: []
+          additionalProperties:
+            # this states that any property can exist, as long as it maps to a double
+            type: number
+            format: float64
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+    Items:
+      type: object
+      oneOf:
+        - required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Item'
+        - required: [item_groups]
+          properties:
+            item_groups:
+              type: array
+              items:
+                $ref: '#/components/schemas/ItemGroup'
     GeneralError:
       type: object
       required:
@@ -431,6 +677,33 @@ components:
       name: grocery_list_id
       in: path
       description: The id of the grocery list in interest
+      required: true
+      schema:
+        type: integer
+        format: int64
+    GroupedItems:
+      name: grouped
+      in: query
+      description: Whether to return item groups. Mutually exclusive with 'ungrouped' parameter
+      allowEmptyValue: true
+      schema: {}
+    UngroupedItems:
+      name: ungrouped
+      in: query
+      description: Whether to return ungrouped items. Mutually exclusive with 'grouped' parameter
+      allowEmptyValue: true
+      schema: {}
+    ItemName:
+      name: item_name
+      in: path
+      description: The name of the items to retrieve
+      required: true
+      schema:
+        type: string
+    ItemID:
+      name: item_id
+      in: path
+      description: The id of the item in interest
       required: true
       schema:
         type: integer
@@ -463,5 +736,9 @@ tags:
     description: Operations on ingredients
   - name: 'Grocery Lists'
     description: Operations on grocery lists
+  - name: 'Meals'
+    description: Operations on meals
+  - name: 'Items'
+    description: Operations on items
 security:
   - bearerAuth: []
