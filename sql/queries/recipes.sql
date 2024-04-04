@@ -1,6 +1,6 @@
--- name: CreateRecipe :execresult
+-- name: CreateRecipe :one
 INSERT INTO recipes(created_at, updated_at, name, description, url, prep_time, cook_time, total_time, owner_id)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;
 
 -- name: GetRecipe :one
 SELECT * FROM recipes

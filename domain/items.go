@@ -19,61 +19,43 @@ func databaseToDomainItem(it database.Item) Item {
 		status = Incomplete
 	}
 	return Item{
-		ID:               it.ID,
-		CreatedAt:        it.CreatedAt,
-		UpdatedAt:        it.UpdatedAt,
-		GroceryListID:    it.GroceryListID,
-		RecipeInstanceID: it.RecipeInstanceID.Int64,
-		IngredientID:     it.IngredientID.Int64,
-		Name:             it.Name,
-		Description:      it.Description.String,
-		Amount:           it.Amount,
-		Units:            it.Units,
-		StandardAmount:   it.StandardAmount,
-		StandardUnits:    ingparse.StandardUnitFromString(it.StandardUnits),
-		Status:           status,
+		ID:             it.ID,
+		CreatedAt:      it.CreatedAt,
+		UpdatedAt:      it.UpdatedAt,
+		GroceryListID:  it.GroceryListID,
+		MealID:         it.MealID.Int64,
+		IngredientID:   it.IngredientID.Int64,
+		Name:           it.Name,
+		Description:    it.Description.String,
+		Amount:         it.Amount,
+		Units:          it.Units,
+		StandardAmount: it.StandardAmount,
+		StandardUnits:  ingparse.StandardUnitFromString(it.StandardUnits),
+		Status:         status,
 	}
 }
 
 func (c *Config) CreateItem(ctx context.Context, groceryList GroceryList, name string, description string, amount float64, units string) (Item, error) {
 	now := time.Now()
 
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return Item{}, err
-	}
-	defer tx.Rollback()
-
-	qtx := c.Querier().WithTx(tx)
-
-	result, err := qtx.CreateItem(ctx, database.CreateItemParams{
-		CreatedAt:        now,
-		UpdatedAt:        now,
-		IngredientID:     sql.NullInt64{},
-		RecipeInstanceID: sql.NullInt64{},
-		GroceryListID:    groceryList.ID,
-		Name:             name,
-		Description:      sql.NullString{String: description, Valid: description == ""},
-		Amount:           amount,
-		Units:            units,
-		StandardAmount:   -1,      // TODO
-		StandardUnits:    "whole", // TODO
+	item, err := c.Querier().CreateItem(ctx, database.CreateItemParams{
+		CreatedAt:      now,
+		UpdatedAt:      now,
+		IngredientID:   sql.NullInt64{},
+		MealID:         sql.NullInt64{},
+		GroceryListID:  groceryList.ID,
+		Name:           name,
+		Description:    sql.NullString{String: description, Valid: description == ""},
+		Amount:         amount,
+		Units:          units,
+		StandardAmount: -1,      // TODO
+		StandardUnits:  "whole", // TODO
 	})
 	if err != nil {
 		return Item{}, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return Item{}, err
-	}
-
-	item, err := qtx.GetItem(ctx, id)
-	if err != nil {
-		return Item{}, err
-	}
-
-	return databaseToDomainItem(item), tx.Commit()
+	return databaseToDomainItem(item), nil
 }
 
 func (c *Config) GetItem(ctx context.Context, user User, id int64) (Item, error) {
@@ -92,9 +74,9 @@ func (c *Config) GetItem(ctx context.Context, user User, id int64) (Item, error)
 	return databaseToDomainItem(row.Item), nil
 }
 
-func (c *Config) GetItemsForRecipeInstance(ctx context.Context, recipeInstance RecipeInstance) ([]Item, error) {
+func (c *Config) GetItemsForMeal(ctx context.Context, meal Meal) ([]Item, error) {
 
-	dbItems, err := c.Querier().GetItemsForRecipeInstance(ctx, sql.NullInt64{Valid: true, Int64: recipeInstance.ID})
+	dbItems, err := c.Querier().GetItemsForMeal(ctx, sql.NullInt64{Valid: true, Int64: meal.ID})
 	if err != nil {
 		return nil, err
 	}

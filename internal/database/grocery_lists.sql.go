@@ -7,13 +7,12 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"time"
 )
 
-const createGroceryList = `-- name: CreateGroceryList :execresult
+const createGroceryList = `-- name: CreateGroceryList :one
 INSERT INTO grocery_lists (created_at, updated_at, name, owner_id)
-VALUES (?, ?, ?, ?)
+VALUES (?, ?, ?, ?) RETURNING id, created_at, updated_at, name, owner_id
 `
 
 type CreateGroceryListParams struct {
@@ -23,13 +22,22 @@ type CreateGroceryListParams struct {
 	OwnerID   int64
 }
 
-func (q *Queries) CreateGroceryList(ctx context.Context, arg CreateGroceryListParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createGroceryList,
+func (q *Queries) CreateGroceryList(ctx context.Context, arg CreateGroceryListParams) (GroceryList, error) {
+	row := q.db.QueryRowContext(ctx, createGroceryList,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.Name,
 		arg.OwnerID,
 	)
+	var i GroceryList
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.OwnerID,
+	)
+	return i, err
 }
 
 const getGroceryList = `-- name: GetGroceryList :one

@@ -1,6 +1,6 @@
--- name: CreateUser :execresult
+-- name: CreateUser :one
 INSERT INTO users (created_at, updated_at, username, hashed_password, first_name, last_name)
-VALUES (?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?) RETURNING *;
 
 -- name: GetUser :one
 SELECT * FROM users

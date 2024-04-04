@@ -31,19 +31,11 @@ type CreateUserParams struct {
 
 func (c *Config) CreateUser(ctx context.Context, params CreateUserParams) (User, error) {
 
-	tx, err := c.DB.Begin()
-	if err != nil {
-		return User{}, err
-	}
-	defer tx.Rollback()
-
-	qtx := c.Querier().WithTx(tx)
-
 	now := time.Now()
 	firstName := sql.NullString{String: params.FirstName, Valid: params.FirstName != ""}
 	lastName := sql.NullString{String: params.LastName, Valid: params.LastName != ""}
 
-	result, err := qtx.CreateUser(ctx, database.CreateUserParams{
+	user, err := c.Querier().CreateUser(ctx, database.CreateUserParams{
 		CreatedAt:      now,
 		UpdatedAt:      now,
 		Username:       params.Username,
@@ -56,17 +48,7 @@ func (c *Config) CreateUser(ctx context.Context, params CreateUserParams) (User,
 		return User{}, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return User{}, err
-	}
-
-	user, err := qtx.GetUser(ctx, id)
-	if err != nil {
-		return User{}, err
-	}
-
-	return databaseToDomainUser(user), tx.Commit()
+	return databaseToDomainUser(user), nil
 }
 
 func (c *Config) GetUser(ctx context.Context, id int64) (User, error) {

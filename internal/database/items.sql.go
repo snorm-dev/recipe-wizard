@@ -11,32 +11,32 @@ import (
 	"time"
 )
 
-const createItem = `-- name: CreateItem :execresult
-INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, recipe_instance_id, name, description, amount, units, standard_amount, standard_units)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+const createItem = `-- name: CreateItem :one
+INSERT INTO items (created_at, updated_at, ingredient_id, grocery_list_id, meal_id, name, description, amount, units, standard_amount, standard_units)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at, updated_at, grocery_list_id, meal_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete
 `
 
 type CreateItemParams struct {
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	IngredientID     sql.NullInt64
-	GroceryListID    int64
-	RecipeInstanceID sql.NullInt64
-	Name             string
-	Description      sql.NullString
-	Amount           float64
-	Units            string
-	StandardAmount   float64
-	StandardUnits    string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	IngredientID   sql.NullInt64
+	GroceryListID  int64
+	MealID         sql.NullInt64
+	Name           string
+	Description    sql.NullString
+	Amount         float64
+	Units          string
+	StandardAmount float64
+	StandardUnits  string
 }
 
-func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createItem,
+func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (Item, error) {
+	row := q.db.QueryRowContext(ctx, createItem,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 		arg.IngredientID,
 		arg.GroceryListID,
-		arg.RecipeInstanceID,
+		arg.MealID,
 		arg.Name,
 		arg.Description,
 		arg.Amount,
@@ -44,10 +44,27 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (sql.Res
 		arg.StandardAmount,
 		arg.StandardUnits,
 	)
+	var i Item
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.GroceryListID,
+		&i.MealID,
+		&i.IngredientID,
+		&i.Name,
+		&i.Description,
+		&i.Amount,
+		&i.Units,
+		&i.StandardAmount,
+		&i.StandardUnits,
+		&i.IsComplete,
+	)
+	return i, err
 }
 
 const getExtendedItem = `-- name: GetExtendedItem :one
-SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, it.is_complete, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.meal_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, it.is_complete, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
 LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.id = ?
 `
@@ -65,7 +82,7 @@ func (q *Queries) GetExtendedItem(ctx context.Context, id int64) (GetExtendedIte
 		&i.Item.CreatedAt,
 		&i.Item.UpdatedAt,
 		&i.Item.GroceryListID,
-		&i.Item.RecipeInstanceID,
+		&i.Item.MealID,
 		&i.Item.IngredientID,
 		&i.Item.Name,
 		&i.Item.Description,
@@ -89,7 +106,7 @@ func (q *Queries) GetExtendedItem(ctx context.Context, id int64) (GetExtendedIte
 }
 
 const getExtendedItemsForGroceryList = `-- name: GetExtendedItemsForGroceryList :many
-SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, it.is_complete, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.meal_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, it.is_complete, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
 LEFT JOIN ingredients i ON it.ingredient_id = i.id
 WHERE it.grocery_list_id = ?
 `
@@ -113,7 +130,7 @@ func (q *Queries) GetExtendedItemsForGroceryList(ctx context.Context, groceryLis
 			&i.Item.CreatedAt,
 			&i.Item.UpdatedAt,
 			&i.Item.GroceryListID,
-			&i.Item.RecipeInstanceID,
+			&i.Item.MealID,
 			&i.Item.IngredientID,
 			&i.Item.Name,
 			&i.Item.Description,
@@ -146,32 +163,32 @@ func (q *Queries) GetExtendedItemsForGroceryList(ctx context.Context, groceryLis
 	return items, nil
 }
 
-const getExtendedItemsForRecipeInstance = `-- name: GetExtendedItemsForRecipeInstance :many
-SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, it.is_complete, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
+const getExtendedItemsForMeal = `-- name: GetExtendedItemsForMeal :many
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.meal_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, it.is_complete, i.id, i.created_at, i.updated_at, i.name, i.description, i.recipe_id, i.amount, i.units, i.standard_amount, i.standard_units FROM items it
 LEFT JOIN ingredients i ON it.ingredient_id = i.id
-WHERE it.recipe_instance_id = ?
+WHERE it.meal_id = ?
 `
 
-type GetExtendedItemsForRecipeInstanceRow struct {
+type GetExtendedItemsForMealRow struct {
 	Item       Item
 	Ingredient Ingredient
 }
 
-func (q *Queries) GetExtendedItemsForRecipeInstance(ctx context.Context, recipeInstanceID sql.NullInt64) ([]GetExtendedItemsForRecipeInstanceRow, error) {
-	rows, err := q.db.QueryContext(ctx, getExtendedItemsForRecipeInstance, recipeInstanceID)
+func (q *Queries) GetExtendedItemsForMeal(ctx context.Context, mealID sql.NullInt64) ([]GetExtendedItemsForMealRow, error) {
+	rows, err := q.db.QueryContext(ctx, getExtendedItemsForMeal, mealID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetExtendedItemsForRecipeInstanceRow
+	var items []GetExtendedItemsForMealRow
 	for rows.Next() {
-		var i GetExtendedItemsForRecipeInstanceRow
+		var i GetExtendedItemsForMealRow
 		if err := rows.Scan(
 			&i.Item.ID,
 			&i.Item.CreatedAt,
 			&i.Item.UpdatedAt,
 			&i.Item.GroceryListID,
-			&i.Item.RecipeInstanceID,
+			&i.Item.MealID,
 			&i.Item.IngredientID,
 			&i.Item.Name,
 			&i.Item.Description,
@@ -205,7 +222,7 @@ func (q *Queries) GetExtendedItemsForRecipeInstance(ctx context.Context, recipeI
 }
 
 const getItem = `-- name: GetItem :one
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete FROM items
+SELECT id, created_at, updated_at, grocery_list_id, meal_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete FROM items
 WHERE id = ?
 `
 
@@ -217,7 +234,7 @@ func (q *Queries) GetItem(ctx context.Context, id int64) (Item, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.GroceryListID,
-		&i.RecipeInstanceID,
+		&i.MealID,
 		&i.IngredientID,
 		&i.Name,
 		&i.Description,
@@ -231,7 +248,7 @@ func (q *Queries) GetItem(ctx context.Context, id int64) (Item, error) {
 }
 
 const getItemAndGroceryList = `-- name: GetItemAndGroceryList :one
-SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.recipe_instance_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, it.is_complete, gl.id, gl.created_at, gl.updated_at, gl.name, gl.owner_id FROM items it
+SELECT it.id, it.created_at, it.updated_at, it.grocery_list_id, it.meal_id, it.ingredient_id, it.name, it.description, it.amount, it.units, it.standard_amount, it.standard_units, it.is_complete, gl.id, gl.created_at, gl.updated_at, gl.name, gl.owner_id FROM items it
 JOIN grocery_lists gl ON it.grocery_list_id = gl.id
 WHERE it.id = ?
 `
@@ -249,7 +266,7 @@ func (q *Queries) GetItemAndGroceryList(ctx context.Context, id int64) (GetItemA
 		&i.Item.CreatedAt,
 		&i.Item.UpdatedAt,
 		&i.Item.GroceryListID,
-		&i.Item.RecipeInstanceID,
+		&i.Item.MealID,
 		&i.Item.IngredientID,
 		&i.Item.Name,
 		&i.Item.Description,
@@ -268,7 +285,7 @@ func (q *Queries) GetItemAndGroceryList(ctx context.Context, id int64) (GetItemA
 }
 
 const getItemsForGroceryList = `-- name: GetItemsForGroceryList :many
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete FROM items it 
+SELECT id, created_at, updated_at, grocery_list_id, meal_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete FROM items it 
 WHERE it.grocery_list_id = ?
 `
 
@@ -286,7 +303,7 @@ func (q *Queries) GetItemsForGroceryList(ctx context.Context, groceryListID int6
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.GroceryListID,
-			&i.RecipeInstanceID,
+			&i.MealID,
 			&i.IngredientID,
 			&i.Name,
 			&i.Description,
@@ -310,7 +327,7 @@ func (q *Queries) GetItemsForGroceryList(ctx context.Context, groceryListID int6
 }
 
 const getItemsForGroceryListByName = `-- name: GetItemsForGroceryListByName :many
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete FROM items it 
+SELECT id, created_at, updated_at, grocery_list_id, meal_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete FROM items it 
 WHERE it.grocery_list_id = ? AND name = ?
 `
 
@@ -333,7 +350,7 @@ func (q *Queries) GetItemsForGroceryListByName(ctx context.Context, arg GetItems
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.GroceryListID,
-			&i.RecipeInstanceID,
+			&i.MealID,
 			&i.IngredientID,
 			&i.Name,
 			&i.Description,
@@ -356,13 +373,13 @@ func (q *Queries) GetItemsForGroceryListByName(ctx context.Context, arg GetItems
 	return items, nil
 }
 
-const getItemsForRecipeInstance = `-- name: GetItemsForRecipeInstance :many
-SELECT id, created_at, updated_at, grocery_list_id, recipe_instance_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete FROM items it 
-WHERE it.recipe_instance_id = ?
+const getItemsForMeal = `-- name: GetItemsForMeal :many
+SELECT id, created_at, updated_at, grocery_list_id, meal_id, ingredient_id, name, description, amount, units, standard_amount, standard_units, is_complete FROM items it 
+WHERE it.meal_id = ?
 `
 
-func (q *Queries) GetItemsForRecipeInstance(ctx context.Context, recipeInstanceID sql.NullInt64) ([]Item, error) {
-	rows, err := q.db.QueryContext(ctx, getItemsForRecipeInstance, recipeInstanceID)
+func (q *Queries) GetItemsForMeal(ctx context.Context, mealID sql.NullInt64) ([]Item, error) {
+	rows, err := q.db.QueryContext(ctx, getItemsForMeal, mealID)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +392,7 @@ func (q *Queries) GetItemsForRecipeInstance(ctx context.Context, recipeInstanceI
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.GroceryListID,
-			&i.RecipeInstanceID,
+			&i.MealID,
 			&i.IngredientID,
 			&i.Name,
 			&i.Description,

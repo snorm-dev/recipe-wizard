@@ -1,6 +1,6 @@
--- name: CreateIngredient :execresult
+-- name: CreateIngredient :one
 INSERT INTO ingredients(created_at, updated_at, name, description, amount, units, standard_amount, standard_units, recipe_id)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *;
 
 -- name: GetIngredient :one
 SELECT * FROM ingredients
